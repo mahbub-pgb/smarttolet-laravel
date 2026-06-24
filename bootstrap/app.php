@@ -65,8 +65,13 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         });
 
-        $exceptions->render(function (AuthenticationException $e) {
-            return ApiResponse::error('Unauthenticated.', 401, 'unauthenticated');
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return ApiResponse::error('Unauthenticated.', 401, 'unauthenticated');
+            }
+
+            // Web UI: send guests to the login page.
+            return redirect()->guest(route('login'));
         });
 
         $exceptions->render(function (AuthorizationException $e) {
