@@ -1,24 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Sign up')
+@section('title', 'Complete your profile')
 
 @section('content')
     <div class="auth-wrap">
         <div class="auth-card">
-            <h1>Create your account</h1>
-            <p class="sub">Join SmartToLet to post listings and save your favourites.</p>
+            <div class="steps">
+                <span class="step done">1. Phone</span>
+                <span class="step done">2. Verify</span>
+                <span class="step active">3. Profile</span>
+            </div>
+            <h1>Almost there</h1>
+            <p class="sub">Your number <strong>{{ $mobile }}</strong> is verified. Set up your profile.</p>
 
-            <form method="POST" action="{{ route('register') }}">
+            <form method="POST" action="{{ route('register.complete') }}">
                 @csrf
                 <div class="field">
                     <label>Full name</label>
                     <input type="text" name="name" value="{{ old('name') }}" placeholder="Your name" required autofocus>
                     @error('name')<div class="field-error">{{ $message }}</div>@enderror
-                </div>
-                <div class="field">
-                    <label>Mobile number</label>
-                    <input type="text" name="mobile" value="{{ old('mobile') }}" placeholder="01XXXXXXXXX" required>
-                    @error('mobile')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
                 <div class="field">
                     <label>Email <span style="font-weight:400">(optional)</span></label>
@@ -36,8 +36,6 @@
                 </div>
                 <button type="submit" class="btn btn-block">Create account</button>
             </form>
-
-            <p class="auth-foot">Already have an account? <a href="{{ route('login') }}">Log in</a></p>
         </div>
     </div>
 @endsection

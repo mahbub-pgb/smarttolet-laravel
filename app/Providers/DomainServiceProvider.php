@@ -26,7 +26,7 @@ class DomainServiceProvider extends ServiceProvider
     public array $bindings = [
         UserRepositoryInterface::class => UserRepository::class,
         ListingRepositoryInterface::class => ListingRepository::class,
-        \App\Services\Auth\Contracts\OtpRepository::class => \App\Services\Auth\RedisOtpRepository::class,
+        \App\Services\Auth\Contracts\OtpRepository::class => \App\Services\Auth\DatabaseOtpRepository::class,
     ];
 
     public function register(): void

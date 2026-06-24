@@ -30,21 +30,26 @@ class BulkSmsBdClient implements SmsClientInterface
         }
 
         try {
-            $response = Http::asForm()->timeout(15)->get($this->endpoint, [
+            // BulkSMSBD's smsapi expects a POST with form fields. It returns
+            // HTTP 200 even for logical errors, so success is determined by the
+            // "response_code" in the body (202 = SMS Submitted Successfully).
+            $response = Http::asForm()->timeout(15)->post($this->endpoint, [
                 'api_key' => $this->apiKey,
-                'type' => 'text',
-                'number' => $this->normalize($to),
                 'senderid' => $this->senderId,
+                'number' => $this->normalize($to),
                 'message' => $message,
             ]);
 
-            if ($response->successful()) {
+            $code = $this->responseCode($response->body());
+
+            if ($code === 202) {
                 return true;
             }
 
             Log::error('[SMS:bulksmsbd] send failed', [
                 'to' => $to,
                 'status' => $response->status(),
+                'response_code' => $code,
                 'body' => $response->body(),
             ]);
         } catch (Throwable $e) {
@@ -59,19 +64,43 @@ class BulkSmsBdClient implements SmsClientInterface
         return 'bulksmsbd';
     }
 
-    /** BulkSMSBD expects 8801XXXXXXXXX format. */
+    /**
+     * Extract BulkSMSBD's numeric response code from a JSON body, e.g.
+     * {"response_code":202,"success_message":"..."}. Returns null if absent.
+     */
+    private function responseCode(string $body): ?int
+    {
+        $json = json_decode($body, true);
+
+        if (is_array($json) && isset($json['response_code'])) {
+            return (int) $json['response_code'];
+        }
+
+        return null;
+    }
+
+    /**
+     * BulkSMSBD expects 88016XXXXXXXX format. Supports comma-separated lists so
+     * one call can target multiple recipients.
+     */
     private function normalize(string $number): string
     {
-        $digits = preg_replace('/\D+/', '', $number) ?? '';
+        $parts = array_filter(array_map('trim', explode(',', $number)));
 
-        if (str_starts_with($digits, '880')) {
-            return $digits;
-        }
+        $normalized = array_map(function (string $n): string {
+            $digits = preg_replace('/\D+/', '', $n) ?? '';
 
-        if (str_starts_with($digits, '0')) {
-            return '88'.$digits;
-        }
+            if (str_starts_with($digits, '880')) {
+                return $digits;
+            }
 
-        return '880'.$digits;
+            if (str_starts_with($digits, '0')) {
+                return '88'.$digits;
+            }
+
+            return '880'.$digits;
+        }, $parts);
+
+        return implode(',', $normalized);
     }
 }

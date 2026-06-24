@@ -19,6 +19,17 @@
                 <a href="{{ route('listings.index') }}" class="{{ request()->routeIs('listings.index') ? 'active' : '' }}">Listings</a>
                 <a href="{{ route('listings.map') }}" class="{{ request()->routeIs('listings.map') ? 'active' : '' }}">Map</a>
                 @if ($user)
+                    @if ($user->isStaff())
+                        <div class="nav-dropdown">
+                            <button type="button" class="nav-trigger {{ request()->routeIs('admin.*') ? 'active' : '' }}">Admin ▾</button>
+                            <div class="nav-menu">
+                                <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                                @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
+                                    <a href="{{ route('admin.settings.sms') }}">SMS Settings</a>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                     <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
                     <form method="POST" action="{{ route('logout') }}" style="display:inline">
                         @csrf

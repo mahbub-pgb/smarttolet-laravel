@@ -39,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt.auth' => Authenticate::class,
             'permission' => RequirePermission::class,
             'role' => RequireRole::class,
+            'web.role' => \App\Http\Middleware\EnsureWebRole::class,
             'maintenance.gate' => EnsureMaintenanceModeAllows::class,
         ]);
 

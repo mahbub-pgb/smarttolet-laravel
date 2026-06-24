@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Web\Auth\AuthController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ListingController;
@@ -12,9 +14,9 @@ use Illuminate\Support\Facades\Route;
 | Web Routes (session-based, server-rendered Blade UI)
 |--------------------------------------------------------------------------
 |
-| Public-facing pages for browsing content and listings, a map view, and
-| session auth (login / register). The REST API lives in routes/api.php and
-| is unaffected by these routes.
+| Public pages for browsing content, listings and a map; a phone+OTP signup
+| flow; and a session-protected admin dashboard. The REST API lives in
+| routes/api.php and is unaffected by these routes.
 |
 */
 
@@ -27,14 +29,39 @@ Route::get('/listings/{slug}', [ListingController::class, 'show'])->name('listin
 
 // --- Guest auth ----------------------------------------------------------
 Route::middleware('guest:web')->group(function () {
+    // Login.
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+
+    // Signup — step 1: phone number -> send OTP via SMS.
+    Route::get('/register', [AuthController::class, 'showRegisterPhone'])->name('register');
+    Route::post('/register', [AuthController::class, 'sendOtp'])->middleware('throttle:6,1');
+
+    // Signup — step 2: verify the OTP.
+    Route::get('/register/verify', [AuthController::class, 'showVerify'])->name('register.verify');
+    Route::post('/register/verify', [AuthController::class, 'verifyOtp']);
+    Route::post('/register/resend', [AuthController::class, 'resendOtp'])
+        ->name('register.resend')->middleware('throttle:6,1');
+
+    // Signup — step 3: name, email, password.
+    Route::get('/register/complete', [AuthController::class, 'showComplete'])->name('register.complete');
+    Route::post('/register/complete', [AuthController::class, 'complete']);
 });
 
-// --- Authenticated -------------------------------------------------------
+// --- Authenticated user --------------------------------------------------
 Route::middleware('auth:web')->group(function () {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
+
+// --- Admin area (super admin + admin) ------------------------------------
+Route::middleware(['auth:web', 'web.role:admin,super_admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/settings/sms', [AdminSettingsController::class, 'sms'])->name('settings.sms');
+        Route::post('/settings/sms', [AdminSettingsController::class, 'updateSms'])->name('settings.sms.update');
+        Route::post('/settings/sms/test', [AdminSettingsController::class, 'testSms'])->name('settings.sms.test');
+    });
