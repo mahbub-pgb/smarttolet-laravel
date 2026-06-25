@@ -217,18 +217,4 @@ class AuthController extends Controller
 
         return redirect()->route('dashboard')->with('status', 'Welcome to SmartToLet, '.$user->name.'!');
     }
-
-    // =====================================================================
-    // User dashboard
-    // =====================================================================
-
-    /** GET /dashboard — the signed-in user's listings. */
-    public function dashboard(Request $request): View
-    {
-        $user = $request->user();
-
-        $listings = $user->listings()->latest()->paginate(10);
-
-        return view('dashboard', compact('user', 'listings'));
-    }
 }

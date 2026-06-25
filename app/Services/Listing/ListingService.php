@@ -8,12 +8,15 @@ use App\Exceptions\ApiException;
 use App\Models\ContactView;
 use App\Models\Listing;
 use App\Models\ListingVisit;
+use App\Models\Media;
 use App\Models\Report;
 use App\Models\User;
 use App\Repositories\Contracts\ListingRepositoryInterface;
+use App\Services\Geo\GeoService;
 use App\Services\Media\ImageService;
 use App\Services\Notification\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class ListingService
@@ -21,10 +24,14 @@ class ListingService
     /** Days a listing stays live after approval before needing renewal. */
     private const LIFETIME_DAYS = 30;
 
+    /** Hard cap on stored images per listing. */
+    private const MAX_IMAGES = 10;
+
     public function __construct(
         private ListingRepositoryInterface $listings,
         private ImageService $images,
         private NotificationService $notifications,
+        private GeoService $geo,
     ) {}
 
     // --- Read ------------------------------------------------------------
@@ -72,13 +79,17 @@ class ListingService
 
     /**
      * @param  array<string, mixed>  $data
-     * @param  array<int, \Illuminate\Http\UploadedFile>  $files
+     * @param  array<int, UploadedFile>  $files
      */
     public function create(User $user, array $data, array $files = []): Listing
     {
         $this->assertWithinPlanLimit($user);
 
-        $images = $files ? $this->images->uploadMany($files) : ($data['images'] ?? []);
+        $uploaded = $files ? $this->images->uploadMany($files) : ($data['images'] ?? []);
+        $picked = $this->resolvePickedMedia($user, $data['picked'] ?? []);
+        $images = array_slice([...$picked, ...$uploaded], 0, self::MAX_IMAGES);
+
+        [$address, $areaName] = $this->resolveLocation($data);
 
         $asDraft = (bool) ($data['as_draft'] ?? false);
 
@@ -89,14 +100,22 @@ class ListingService
             'type' => $data['type'],
             'category' => $data['category'] ?? null,
             'rent' => $data['rent'],
+            'advance_amount' => $data['advance_amount'] ?? null,
+            'available_from' => $data['available_from'] ?? null,
             'bedrooms' => $data['bedrooms'] ?? 0,
             'bathrooms' => $data['bathrooms'] ?? 0,
-            'area_name' => $data['area_name'],
-            'address' => $data['address'],
+            'area_sqft' => $data['area_sqft'] ?? null,
+            'balconies' => $data['balconies'] ?? 0,
+            'floor_number' => $data['floor_number'] ?? null,
+            'building_floors' => $data['building_floors'] ?? null,
+            'area_name' => $areaName,
+            'address' => $address,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'amenities' => $data['amenities'] ?? [],
+            'occupancy_rules' => $data['occupancy_rules'] ?? [],
             'images' => $images,
+            'video_tour_url' => $data['video_tour_url'] ?? null,
             'status' => $asDraft ? Listing::STATUS_DRAFT : Listing::STATUS_PENDING,
         ]);
 
@@ -107,24 +126,123 @@ class ListingService
 
     /**
      * @param  array<string, mixed>  $data
-     * @param  array<int, \Illuminate\Http\UploadedFile>  $files
+     * @param  array<int, UploadedFile>  $files
      */
     public function update(Listing $listing, array $data, array $files = []): Listing
     {
-        if ($files) {
-            $newImages = $this->images->uploadMany($files);
-            $data['images'] = array_merge($listing->images ?? [], $newImages);
+        // Rebuild the image set only when media actually changed (uploads, picks
+        // or removals). Leaving the key absent otherwise preserves the existing
+        // images and keeps the reviewable-fields check unaffected.
+        $removeImages = $data['remove_images'] ?? [];
+        $picked = $this->resolvePickedMedia($listing->owner, $data['picked'] ?? []);
+
+        if ($files || $picked || $removeImages) {
+            $kept = $this->removeImages($listing, $removeImages);
+            $uploaded = $files ? $this->images->uploadMany($files) : [];
+            $data['images'] = array_slice([...$kept, ...$picked, ...$uploaded], 0, self::MAX_IMAGES);
         }
 
-        // Editing a non-draft listing sends it back to moderation.
-        if ($listing->status === Listing::STATUS_APPROVED && $this->touchesReviewableFields($data)) {
+        if (array_key_exists('latitude', $data)) {
+            [$data['address'], $data['area_name']] = $this->resolveLocation($data, $listing);
+        }
+
+        // Status: the dashboard form sends `as_draft`, which means the owner is
+        // editing and may only land on draft or pending (never self-publish).
+        // Without it (e.g. the API), the legacy rule applies: editing an
+        // approved listing's reviewable fields re-queues it for moderation.
+        if (array_key_exists('as_draft', $data)) {
+            if ($listing->status === Listing::STATUS_APPROVED) {
+                if ($this->touchesReviewableFields($data)) {
+                    $data['status'] = Listing::STATUS_PENDING;
+                }
+            } else {
+                $data['status'] = $data['as_draft'] ? Listing::STATUS_DRAFT : Listing::STATUS_PENDING;
+            }
+        } elseif ($listing->status === Listing::STATUS_APPROVED && $this->touchesReviewableFields($data)) {
             $data['status'] = Listing::STATUS_PENDING;
         }
+
+        // Strip control keys that are not real columns before mass-assigning.
+        unset($data['picked'], $data['remove_images'], $data['as_draft']);
 
         $listing->fill($data)->save();
         $this->syncGeoPoint($listing);
 
         return $listing->refresh();
+    }
+
+    /**
+     * Resolve media-library picks (Media ids owned by the user) into the stored
+     * image shape. Silently drops ids the user does not own.
+     *
+     * @param  array<int, int|string>  $ids
+     * @return array<int, array{url: string, public_id: string|null, disk: string}>
+     */
+    private function resolvePickedMedia(?User $owner, array $ids): array
+    {
+        if (! $owner || $ids === []) {
+            return [];
+        }
+
+        return Media::query()
+            ->where('owner_id', $owner->id)
+            ->whereIn('id', $ids)
+            ->get()
+            ->map(fn (Media $m) => ['url' => $m->url, 'public_id' => $m->public_id, 'disk' => $m->disk])
+            ->all();
+    }
+
+    /**
+     * Return the listing's images minus any whose url is in $urls, deleting the
+     * removed files from storage.
+     *
+     * @param  array<int, string>  $urls
+     * @return array<int, array<string, mixed>>
+     */
+    private function removeImages(Listing $listing, array $urls): array
+    {
+        $current = $listing->images ?? [];
+        if ($urls === []) {
+            return $current;
+        }
+
+        $remove = array_flip($urls);
+        $kept = [];
+
+        foreach ($current as $image) {
+            if (isset($remove[$image['url'] ?? ''])) {
+                $this->images->delete($image['public_id'] ?? null, $image['disk'] ?? 'cloudinary', $image['url'] ?? '');
+
+                continue;
+            }
+            $kept[] = $image;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Resolve the human address + area for a coordinate. Uses the submitted
+     * values when present, otherwise reverse-geocodes the pin (best effort).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: string}
+     */
+    private function resolveLocation(array $data, ?Listing $existing = null): array
+    {
+        $address = trim((string) ($data['address'] ?? '')) ?: (string) ($existing->address ?? '');
+        $area = trim((string) ($data['area_name'] ?? '')) ?: (string) ($existing->area_name ?? '');
+
+        $lat = $data['latitude'] ?? $existing?->latitude;
+        $lng = $data['longitude'] ?? $existing?->longitude;
+
+        if (($address === '' || $area === '') && $lat !== null && $lng !== null) {
+            $geo = $this->geo->reverseGeocode((float) $lat, (float) $lng);
+            $address = $address ?: (string) ($geo['formatted_address'] ?? 'Location pinned on map');
+            $area = $area ?: (string) ($geo['area_name'] ?? 'Unknown area');
+        }
+
+        return [$address ?: 'Location pinned on map', $area ?: 'Unknown area'];
     }
 
     public function delete(Listing $listing): void

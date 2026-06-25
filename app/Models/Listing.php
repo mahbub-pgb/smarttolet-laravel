@@ -36,6 +36,34 @@ class Listing extends Model
 
     public const STATUS_RENTED = 'rented';
 
+    /** Selectable property types. */
+    public const TYPES = ['apartment', 'room', 'sublet', 'office', 'shop', 'house', 'garage', 'hostel'];
+
+    /** Amenity key => human label (checkboxes on the listing form). */
+    public const AMENITIES = [
+        'parking' => 'Parking',
+        'lift' => 'Lift/Elevator',
+        'generator' => 'Generator backup',
+        'wifi' => 'WiFi',
+        'gas' => 'Gas connection',
+        'ac' => 'Air conditioning',
+        'security' => 'Security guard',
+        'cctv' => 'CCTV',
+        'gym' => 'Gym',
+        'swimming_pool' => 'Swimming pool',
+        'pet_friendly' => 'Pet friendly',
+    ];
+
+    /** Occupancy & rule key => human label (checkboxes on the listing form). */
+    public const OCCUPANCY_RULES = [
+        'family_only' => 'Family only',
+        'bachelor_allowed' => 'Bachelor allowed',
+        'female_only' => 'Female only',
+        'male_only' => 'Male only',
+        'smoking_allowed' => 'Smoking allowed',
+        'pets_allowed' => 'Pets allowed',
+    ];
+
     protected $fillable = [
         'owner_id',
         'title',
@@ -44,14 +72,22 @@ class Listing extends Model
         'type',
         'category',
         'rent',
+        'advance_amount',
+        'available_from',
         'bedrooms',
         'bathrooms',
+        'area_sqft',
+        'balconies',
+        'floor_number',
+        'building_floors',
         'area_name',
         'address',
         'latitude',
         'longitude',
         'images',
+        'video_tour_url',
         'amenities',
+        'occupancy_rules',
         'status',
         'rejection_reason',
         'approved_at',
@@ -62,12 +98,19 @@ class Listing extends Model
     {
         return [
             'rent' => 'integer',
+            'advance_amount' => 'integer',
+            'available_from' => 'date',
             'bedrooms' => 'integer',
             'bathrooms' => 'integer',
+            'area_sqft' => 'integer',
+            'balconies' => 'integer',
+            'floor_number' => 'integer',
+            'building_floors' => 'integer',
             'latitude' => 'float',
             'longitude' => 'float',
             'images' => 'array',
             'amenities' => 'array',
+            'occupancy_rules' => 'array',
             'view_count' => 'integer',
             'contact_view_count' => 'integer',
             'approved_at' => 'datetime',

@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Web\Auth\AuthController;
+use App\Http\Controllers\Web\DashboardListingController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ListingController;
+use App\Http\Controllers\Web\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,8 +52,22 @@ Route::middleware('guest:web')->group(function () {
 
 // --- Authenticated user --------------------------------------------------
 Route::middleware('auth:web')->group(function () {
-    Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // "My Listings" tab + create/edit/delete (owner only).
+    Route::get('/dashboard', [DashboardListingController::class, 'index'])->name('dashboard');
+
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('/listings/create', [DashboardListingController::class, 'create'])->name('listings.create');
+        Route::post('/listings', [DashboardListingController::class, 'store'])->name('listings.store');
+        Route::get('/listings/{listing}/edit', [DashboardListingController::class, 'edit'])->name('listings.edit');
+        Route::put('/listings/{listing}', [DashboardListingController::class, 'update'])->name('listings.update');
+        Route::delete('/listings/{listing}', [DashboardListingController::class, 'destroy'])->name('listings.destroy');
+
+        // "Profile Settings" tab.
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    });
 });
 
 // --- Admin area (super admin + admin) ------------------------------------
