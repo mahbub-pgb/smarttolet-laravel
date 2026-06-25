@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     @stack('head')
 </head>
+
 <body>
     @php($user = auth('web')->user())
     <header class="site-header">
@@ -19,25 +21,20 @@
                 <a href="{{ route('listings.index') }}" class="{{ request()->routeIs('listings.index') ? 'active' : '' }}">Listings</a>
                 <a href="{{ route('listings.map') }}" class="{{ request()->routeIs('listings.map') ? 'active' : '' }}">Map</a>
                 @if ($user)
-                    @if ($user->isStaff())
-                        <div class="nav-dropdown">
-                            <button type="button" class="nav-trigger {{ request()->routeIs('admin.*') ? 'active' : '' }}">Admin ▾</button>
-                            <div class="nav-menu">
-                                <a href="{{ route('admin.dashboard') }}">Dashboard</a>
-                                @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
-                                    <a href="{{ route('admin.settings.sms') }}">SMS Settings</a>
-                                @endif
-                            </div>
-                        </div>
-                    @endif
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-                    <form method="POST" action="{{ route('logout') }}" style="display:inline">
-                        @csrf
-                        <button type="submit" class="btn btn-ghost btn-sm">Log out</button>
-                    </form>
+                @if ($user->isStaff())
+                <a href="{{ route('admin.dashboard') }}"
+                    class="{{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                    Admin
+                </a>
+                @endif
+                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+                <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                    @csrf
+                    <button type="submit" class="btn btn-ghost btn-sm">Log out</button>
+                </form>
                 @else
-                    <a href="{{ route('login') }}">Log in</a>
-                    <a href="{{ route('register') }}" class="btn btn-sm">Sign up</a>
+                <a href="{{ route('login') }}">Log in</a>
+                <a href="{{ route('register') }}" class="btn btn-sm">Sign up</a>
                 @endif
             </nav>
         </div>
@@ -45,9 +42,9 @@
 
     <main>
         @if (session('status'))
-            <div class="container" style="padding-top:18px">
-                <div class="alert alert-success">{{ session('status') }}</div>
-            </div>
+        <div class="container" style="padding-top:18px">
+            <div class="alert alert-success">{{ session('status') }}</div>
+        </div>
         @endif
         @yield('content')
     </main>
@@ -84,4 +81,5 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     @stack('scripts')
 </body>
+
 </html>
