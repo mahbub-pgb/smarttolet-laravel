@@ -21,22 +21,32 @@
                 <a href="{{ route('listings.index', request()->except('page')) }}" class="btn btn-ghost btn-sm">☰ List view</a>
             </div>
 
-            @include('partials.category-nav', ['navRoute' => 'listings.map'])
-
-            {{-- Distance / "near me" + sort controls. The near-me button asks the
-                 browser for the user's location, then reloads with lat/lng/radius
-                 so the server returns only nearby listings (sorted nearest). --}}
+            {{-- Category + distance + sort controls, all on one line. The category
+                 dropdown swaps the active `type`/`occupancy` filter; the rest
+                 reload with the chosen rent/beds/radius/sort parameters. --}}
             <form method="GET" action="{{ route('listings.map') }}" class="map-filters" id="map-filters">
-                {{-- Preserve the active category + keyword filters across reloads. --}}
-                @foreach (['type', 'occupancy', 'q', 'area'] as $keep)
+                {{-- Preserve the active keyword filters across reloads. --}}
+                @foreach (['q', 'area'] as $keep)
                     @if (request()->filled($keep))
                         <input type="hidden" name="{{ $keep }}" value="{{ request($keep) }}">
                     @endif
                 @endforeach
+                {{-- The category select writes the chosen rule into these before submit. --}}
+                <input type="hidden" name="type" id="cat-type" value="{{ request('type') }}">
+                <input type="hidden" name="occupancy" id="cat-occupancy" value="{{ request('occupancy') }}">
                 <input type="hidden" name="lat" id="near-lat" value="{{ request('lat') }}">
                 <input type="hidden" name="lng" id="near-lng" value="{{ request('lng') }}">
 
-                <button type="button" id="near-me" class="btn btn-sm">📍 Near me</button>
+                <label class="map-filter-field">
+                    Category
+                    <select id="category-select">
+                        <option value="">All categories</option>
+                        @foreach (\App\Models\Listing::NAV_CATEGORIES as $cat)
+                            <option value="{{ $cat['param'] }}:{{ $cat['value'] }}"
+                                @selected(request($cat['param']) === $cat['value'])>{{ $cat['icon'] }} {{ $cat['label'] }}</option>
+                        @endforeach
+                    </select>
+                </label>
 
                 <label class="map-filter-field">
                     Distance

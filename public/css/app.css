@@ -609,10 +609,17 @@ img {
 /* --- Map filter / "near me" toolbar --- */
 .map-filters {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: flex-end;
     gap: 10px;
     margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+.map-filters > * {
+    flex: 0 0 auto;
 }
 .map-filter-field {
     display: flex;
