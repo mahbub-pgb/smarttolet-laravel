@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Web\Admin\ListingController as AdminListingController;
 use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Web\Auth\AuthController;
 use App\Http\Controllers\Web\DashboardListingController;
@@ -76,6 +77,12 @@ Route::middleware(['auth:web', 'web.role:admin,super_admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Manage all user listings: approve / unpublish to draft / delete.
+        Route::get('/listings', [AdminListingController::class, 'index'])->name('listings.index');
+        Route::post('/listings/{listing}/approve', [AdminListingController::class, 'approve'])->name('listings.approve');
+        Route::post('/listings/{listing}/draft', [AdminListingController::class, 'draft'])->name('listings.draft');
+        Route::delete('/listings/{listing}', [AdminListingController::class, 'destroy'])->name('listings.destroy');
 
         Route::get('/settings/sms', [AdminSettingsController::class, 'sms'])->name('settings.sms');
         Route::post('/settings/sms', [AdminSettingsController::class, 'updateSms'])->name('settings.sms.update');

@@ -15,6 +15,7 @@
         <a href="{{ route('home') }}" class="brand" style="color:#fff;padding:0 22px;display:block;margin-bottom:24px">Smart<span>ToLet</span></a>
         <nav class="admin-nav">
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Dashboard</a>
+            <a href="{{ route('admin.listings.index') }}" class="{{ request()->routeIs('admin.listings.*') ? 'active' : '' }}">🏠 Manage Listings</a>
             <a href="{{ route('admin.settings.sms') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">✉️ SMS Settings</a>
             <div class="admin-nav-sep">Site</div>
             <a href="{{ route('listings.index') }}">🏠 View Listings</a>

@@ -86,8 +86,9 @@ class ListingService
         $this->assertWithinPlanLimit($user);
 
         $uploaded = $files ? $this->images->uploadMany($files) : ($data['images'] ?? []);
+        $this->recordMedia($user, $uploaded);
         $picked = $this->resolvePickedMedia($user, $data['picked'] ?? []);
-        $images = array_slice([...$picked, ...$uploaded], 0, self::MAX_IMAGES);
+        $images = array_slice($this->dedupeByUrl([...$picked, ...$uploaded]), 0, self::MAX_IMAGES);
 
         [$address, $areaName] = $this->resolveLocation($data);
 
@@ -139,7 +140,8 @@ class ListingService
         if ($files || $picked || $removeImages) {
             $kept = $this->removeImages($listing, $removeImages);
             $uploaded = $files ? $this->images->uploadMany($files) : [];
-            $data['images'] = array_slice([...$kept, ...$picked, ...$uploaded], 0, self::MAX_IMAGES);
+            $this->recordMedia($listing->owner, $uploaded);
+            $data['images'] = array_slice($this->dedupeByUrl([...$kept, ...$picked, ...$uploaded]), 0, self::MAX_IMAGES);
         }
 
         if (array_key_exists('latitude', $data)) {
@@ -190,6 +192,34 @@ class ListingService
             ->get()
             ->map(fn (Media $m) => ['url' => $m->url, 'public_id' => $m->public_id, 'disk' => $m->disk])
             ->all();
+    }
+
+    /**
+     * Register freshly-uploaded listing images in the owner's media library so
+     * they can be re-picked on future listings. Skips ones already recorded.
+     *
+     * @param  array<int, array{url: string, public_id: string|null, disk: string}>  $images
+     */
+    private function recordMedia(?User $owner, array $images): void
+    {
+        if (! $owner) {
+            return;
+        }
+
+        foreach ($images as $image) {
+            if (empty($image['url'])) {
+                continue;
+            }
+
+            Media::firstOrCreate(
+                ['owner_id' => $owner->id, 'url' => $image['url']],
+                [
+                    'public_id' => $image['public_id'] ?? null,
+                    'disk' => $image['disk'] ?? 'public',
+                    'type' => 'image',
+                ],
+            );
+        }
     }
 
     /**
@@ -273,6 +303,41 @@ class ListingService
         $listing->forceFill([
             'expires_at' => now()->addDays(self::LIFETIME_DAYS),
             'status' => $listing->status === Listing::STATUS_RENTED ? Listing::STATUS_APPROVED : $listing->status,
+        ])->save();
+
+        return $listing->refresh();
+    }
+
+    /**
+     * Drop duplicate images sharing the same url, preserving order.
+     *
+     * @param  array<int, array<string, mixed>>  $images
+     * @return array<int, array<string, mixed>>
+     */
+    private function dedupeByUrl(array $images): array
+    {
+        $seen = [];
+        $out = [];
+
+        foreach ($images as $image) {
+            $url = $image['url'] ?? null;
+            if ($url === null || isset($seen[$url])) {
+                continue;
+            }
+            $seen[$url] = true;
+            $out[] = $image;
+        }
+
+        return $out;
+    }
+
+    /** Staff action: send a listing back to draft (unpublished). */
+    public function markDraft(Listing $listing): Listing
+    {
+        $listing->forceFill([
+            'status' => Listing::STATUS_DRAFT,
+            'approved_at' => null,
+            'expires_at' => null,
         ])->save();
 
         return $listing->refresh();

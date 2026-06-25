@@ -48,8 +48,6 @@ class ImageService
      */
     public function upload(UploadedFile $file, string $folder = 'listings'): ?array
     {
-        $binary = $this->resize($file);
-
         if ($this->cloudinaryConfigured()) {
             $cloud = $this->uploadToCloudinary($file, $folder);
             if ($cloud !== null) {
@@ -58,7 +56,7 @@ class ImageService
             // Fall through to local storage on Cloudinary failure.
         }
 
-        return $this->storeLocally($binary, $file, $folder);
+        return $this->storeLocally($file, $folder);
     }
 
     public function delete(?string $publicId, string $disk, string $url): void
@@ -79,9 +77,17 @@ class ImageService
         }
     }
 
-    /** Resize/compress; returns processed binary, or original bytes on failure. */
-    private function resize(UploadedFile $file): string
+    /**
+     * Resize/compress to a JPEG. Returns the processed binary, or null when the
+     * GD extension is unavailable or processing fails (the caller then stores
+     * the original file untouched, preserving its real format/extension).
+     */
+    private function resize(UploadedFile $file): ?string
     {
+        if (! extension_loaded('gd')) {
+            return null;
+        }
+
         try {
             $manager = ImageManager::gd();
             $image = $manager->read($file->getRealPath());
@@ -91,7 +97,7 @@ class ImageService
         } catch (Throwable $e) {
             Log::warning('[image] resize failed, using original', ['error' => $e->getMessage()]);
 
-            return (string) file_get_contents($file->getRealPath());
+            return null;
         }
     }
 
@@ -121,18 +127,35 @@ class ImageService
     }
 
     /**
-     * @return array{url: string, public_id: string|null, disk: string}
+     * Persist to the local "public" disk. Uses the resized JPEG when GD is
+     * available, otherwise stores the original file with its real extension.
+     *
+     * @return array{url: string, public_id: string|null, disk: string}|null
      */
-    private function storeLocally(string $binary, UploadedFile $file, string $folder): array
+    private function storeLocally(UploadedFile $file, string $folder): ?array
     {
-        $name = $folder.'/'.Str::uuid()->toString().'.jpg';
-        Storage::disk('public')->put($name, $binary);
+        try {
+            $binary = $this->resize($file);
 
-        return [
-            'url' => Storage::disk('public')->url($name),
-            'public_id' => null,
-            'disk' => 'public',
-        ];
+            if ($binary !== null) {
+                $name = $folder.'/'.Str::uuid()->toString().'.jpg';
+                Storage::disk('public')->put($name, $binary);
+            } else {
+                $ext = $file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg';
+                $name = $folder.'/'.Str::uuid()->toString().'.'.strtolower($ext);
+                Storage::disk('public')->putFileAs($folder, $file, basename($name));
+            }
+
+            return [
+                'url' => Storage::disk('public')->url($name),
+                'public_id' => null,
+                'disk' => 'public',
+            ];
+        } catch (Throwable $e) {
+            Log::error('[image] local store failed', ['error' => $e->getMessage()]);
+
+            return null;
+        }
     }
 
     private function cloudinaryConfigured(): bool
