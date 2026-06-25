@@ -164,7 +164,7 @@
                 {{-- ===== Media ===== --}}
                 <fieldset class="form-card">
                     <legend>Photos</legend>
-                    <p class="form-hint">Add up to 10 photos — upload new ones or pick from your library.</p>
+                    <p class="form-hint">Add up to 10 photos — upload new ones or pick from your library. Large images are compressed automatically before upload.</p>
 
                     {{-- Selected-image preview strip (filled by JS) --}}
                     <div id="media-preview" class="media-preview"></div>

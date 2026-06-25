@@ -10,6 +10,62 @@
         catch (e) { return []; }
     }
 
+    // ---- Client-side image compression (resize + re-encode to JPEG) ----
+    var MAX_DIM = 1600;     // longest edge, px
+    var QUALITY = 0.8;      // JPEG quality
+
+    function blobToFile(blob, origName) {
+        var name = String(origName || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+        return new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
+    }
+
+    function drawToJpeg(draw, w, h, file, resolve) {
+        var scale = Math.min(1, MAX_DIM / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        draw(canvas.getContext('2d'), cw, ch);
+        canvas.toBlob(function (blob) {
+            // Keep the original if compression didn't actually make it smaller.
+            if (!blob || blob.size >= file.size) { resolve(file); return; }
+            resolve(blobToFile(blob, file.name));
+        }, 'image/jpeg', QUALITY);
+    }
+
+    function compressFile(file) {
+        return new Promise(function (resolve) {
+            if (!file.type || file.type.indexOf('image/') !== 0) { resolve(file); return; }
+
+            function viaImage() {
+                var url = URL.createObjectURL(file);
+                var img = new Image();
+                img.onload = function () {
+                    URL.revokeObjectURL(url);
+                    drawToJpeg(function (ctx, cw, ch) { ctx.drawImage(img, 0, 0, cw, ch); }, img.naturalWidth, img.naturalHeight, file, resolve);
+                };
+                img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+                img.src = url;
+            }
+
+            // Prefer createImageBitmap — it honours EXIF orientation from phones.
+            if (window.createImageBitmap) {
+                var pr;
+                try { pr = createImageBitmap(file, { imageOrientation: 'from-image' }); }
+                catch (e) { viaImage(); return; }
+                pr.then(function (bmp) {
+                    drawToJpeg(function (ctx, cw, ch) { ctx.drawImage(bmp, 0, 0, cw, ch); if (bmp.close) bmp.close(); }, bmp.width, bmp.height, file, resolve);
+                }).catch(viaImage);
+            } else {
+                viaImage();
+            }
+        });
+    }
+
+    function compressFiles(files) {
+        return Promise.all($.map(files, function (f) { return compressFile(f); }));
+    }
+
     // ================= Photo gallery modal =================
     $(function () {
         var imgInput = document.getElementById('img-input');
@@ -88,19 +144,36 @@
             $modal.find('.modal-pane[data-pane="' + tab + '"]').addClass('active');
         });
 
-        // Upload (dropzone)
+        // Upload (dropzone) — selected images are compressed before they're queued.
+        var busy = false;
+
+        function addFiles(newFiles, mergeExisting) {
+            if (busy) return;
+            if (!newFiles.length) { enforceMax(); render(); return; }
+            busy = true;
+            var keep = mergeExisting ? uploads() : [];
+            $preview.html('<p class="form-hint" style="margin:0">Compressing photos…</p>');
+            compressFiles(newFiles).then(function (out) {
+                var dt = new DataTransfer();
+                $.each(keep, function (_, f) { dt.items.add(f); });
+                $.each(out, function (_, f) { dt.items.add(f); });
+                imgInput.files = dt.files; // programmatic set does not refire 'change'
+                busy = false;
+                enforceMax(); render();
+            });
+        }
+
         var $dropzone = $('#dropzone');
         $dropzone.on('click', function () { imgInput.click(); });
         $dropzone.on('dragover dragenter', function (e) { e.preventDefault(); $dropzone.addClass('over'); });
         $dropzone.on('dragleave drop', function (e) { e.preventDefault(); $dropzone.removeClass('over'); });
         $dropzone.on('drop', function (e) {
-            var dt = new DataTransfer();
-            $.each(uploads(), function (_, f) { dt.items.add(f); });
-            $.each(e.originalEvent.dataTransfer.files, function (_, f) { if (f.type.indexOf('image/') === 0) dt.items.add(f); });
-            imgInput.files = dt.files;
-            enforceMax(); render();
+            var dropped = $.grep(Array.prototype.slice.call(e.originalEvent.dataTransfer.files), function (f) {
+                return f.type && f.type.indexOf('image/') === 0;
+            });
+            addFiles(dropped, true);
         });
-        $(imgInput).on('change', function () { enforceMax(); render(); });
+        $(imgInput).on('change', function () { addFiles(uploads(), false); });
 
         function enforceMax() {
             if (total() <= MAX) return;
