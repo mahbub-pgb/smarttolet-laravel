@@ -89,6 +89,7 @@
                                 <button type="button" id="get-directions" class="btn btn-sm">🧭 Get directions</button>
                             </div>
                             <div id="map" style="height:360px;margin-top:12px;border-radius:var(--radius)"
+                                 data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}"
                                  data-lat="{{ $listing->latitude }}" data-lng="{{ $listing->longitude }}"
                                  data-title="{{ $listing->title }}"></div>
                             <p id="dir-info" class="form-hint" style="margin-top:8px;display:none"></p>
@@ -136,78 +137,18 @@
     </div>
 @endsection
 
+@push('head')
+    @if ($listing->hasLocation() && ! $mapsKey)
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    @endif
+@endpush
+
 @push('scripts')
-    {{-- Gallery + lightbox --}}
-    <script>
-        (function () {
-            const lead = document.getElementById('gallery-lead');
-            if (!lead) return;
-            document.querySelectorAll('.gthumb').forEach(t => t.addEventListener('click', () => {
-                lead.src = t.dataset.src;
-                document.querySelectorAll('.gthumb').forEach(x => x.classList.remove('active'));
-                t.classList.add('active');
-            }));
-            const lb = document.getElementById('lightbox');
-            const lbImg = document.getElementById('lightbox-img');
-            lead.addEventListener('click', () => { lbImg.src = lead.src; lb.classList.add('open'); });
-            document.getElementById('lightbox-close').addEventListener('click', () => lb.classList.remove('open'));
-            lb.addEventListener('click', e => { if (e.target === lb) lb.classList.remove('open'); });
-        })();
-    </script>
-
-    @if ($listing->hasLocation())
-        @if ($mapsKey)
-            <script>
-                function initShowMap() {
-                    const el = document.getElementById('map');
-                    const dest = { lat: parseFloat(el.dataset.lat), lng: parseFloat(el.dataset.lng) };
-                    const map = new google.maps.Map(el, { center: dest, zoom: 15, mapTypeControl: false, streetViewControl: false });
-                    const marker = new google.maps.Marker({ map, position: dest, title: el.dataset.title });
-                    const info = new google.maps.InfoWindow({ content: el.dataset.title });
-                    marker.addListener('click', () => info.open(map, marker));
-
-                    const dirSvc = new google.maps.DirectionsService();
-                    const dirRender = new google.maps.DirectionsRenderer({ map, suppressMarkers: false });
-                    const dirInfo = document.getElementById('dir-info');
-
-                    document.getElementById('get-directions').addEventListener('click', () => {
-                        if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
-                        dirInfo.style.display = 'block';
-                        dirInfo.textContent = 'Locating you…';
-                        navigator.geolocation.getCurrentPosition(
-                            pos => {
-                                const origin = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                                dirSvc.route({ origin, destination: dest, travelMode: google.maps.TravelMode.DRIVING }, (res, status) => {
-                                    if (status === 'OK') {
-                                        dirRender.setDirections(res);
-                                        const leg = res.routes[0].legs[0];
-                                        dirInfo.textContent = `🚗 ${leg.distance.text} · about ${leg.duration.text} from your location.`;
-                                    } else {
-                                        dirInfo.textContent = 'Could not calculate directions.';
-                                    }
-                                });
-                            },
-                            () => { dirInfo.textContent = 'Could not get your location. Please allow location access.'; }
-                        );
-                    });
-                }
-            </script>
-            <script async src="https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&callback=initShowMap"></script>
-        @else
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-            <script>
-                (function () {
-                    const el = document.getElementById('map');
-                    const lat = parseFloat(el.dataset.lat), lng = parseFloat(el.dataset.lng);
-                    const map = L.map('map').setView([lat, lng], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-                    L.marker([lat, lng]).addTo(map).bindPopup(el.dataset.title).openPopup();
-                    document.getElementById('get-directions').addEventListener('click', () => {
-                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-                    });
-                })();
-            </script>
-        @endif
+    @if ($listing->hasLocation() && ! $mapsKey)
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @endif
+    <script src="{{ asset('js/listing-show.js') }}"></script>
+    @if ($listing->hasLocation() && $mapsKey)
+        <script async src="https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&callback=initShowMap"></script>
     @endif
 @endpush

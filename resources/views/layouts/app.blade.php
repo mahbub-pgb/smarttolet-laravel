@@ -81,6 +81,7 @@
             <div class="footer-bottom">© {{ date('Y') }} SmartToLet. All rights reserved.</div>
         </div>
     </footer>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     @stack('scripts')
 </body>
 </html>

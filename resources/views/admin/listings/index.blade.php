@@ -128,79 +128,8 @@
         </form>
     </div>
 </div>
-
-<script>
-    (function() {
-        // ---- Preview modal ----
-        const pModal = document.getElementById('preview-modal');
-        const pBody = document.getElementById('preview-body');
-        const openP = () => {
-            pModal.classList.add('open');
-            pModal.setAttribute('aria-hidden', 'false');
-        };
-        const closeP = () => {
-            pModal.classList.remove('open');
-            pModal.setAttribute('aria-hidden', 'true');
-        };
-
-        document.querySelectorAll('.preview-btn').forEach(btn => btn.addEventListener('click', () => {
-            pBody.innerHTML = '<p class="muted">Loading…</p>';
-            openP();
-            fetch(btn.dataset.url, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin'
-                })
-                .then(r => r.ok ? r.text() : Promise.reject(r.status))
-                .then(html => {
-                    pBody.innerHTML = html;
-                })
-                .catch(() => {
-                    pBody.innerHTML = '<p class="alert alert-error">Could not load the preview.</p>';
-                });
-        }));
-        document.getElementById('preview-close').addEventListener('click', closeP);
-        pModal.addEventListener('click', e => {
-            if (e.target === pModal) closeP();
-        });
-
-        // ---- Reject modal ----
-        const rModal = document.getElementById('reject-modal');
-        const rForm = document.getElementById('reject-form');
-        const rTarget = document.getElementById('reject-target');
-        const openR = () => {
-            rModal.classList.add('open');
-            rModal.setAttribute('aria-hidden', 'false');
-        };
-        const closeR = () => {
-            rModal.classList.remove('open');
-            rModal.setAttribute('aria-hidden', 'true');
-        };
-
-        // Buttons on the table rows, plus any inside the fetched preview fragment.
-        document.addEventListener('click', e => {
-            const btn = e.target.closest('.reject-btn');
-            if (!btn) return;
-            rForm.action = btn.dataset.url;
-            if (btn.dataset.title) rTarget.textContent = `Why is “${btn.dataset.title}” being rejected? The owner will see this message.`;
-            rForm.reason.value = '';
-            closeP();
-            openR();
-            setTimeout(() => rForm.reason.focus(), 50);
-        });
-        document.getElementById('reject-close').addEventListener('click', closeR);
-        document.getElementById('reject-cancel').addEventListener('click', closeR);
-        rModal.addEventListener('click', e => {
-            if (e.target === rModal) closeR();
-        });
-
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
-                closeP();
-                closeR();
-            }
-        });
-    })();
-</script>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/admin-listings.js') }}"></script>
+@endpush
