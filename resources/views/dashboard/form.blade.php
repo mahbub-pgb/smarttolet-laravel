@@ -204,6 +204,9 @@
                                     <span>Click to choose images, or drag &amp; drop here</span>
                                     <small>JPG, PNG or WebP · up to 5&nbsp;MB each</small>
                                 </label>
+
+                                {{-- Selected-image preview strip (filled by JS) --}}
+                                <div id="modal-preview" class="media-preview"></div>
                             </div>
                             <div class="modal-pane" data-pane="library">
                                 @if ($mediaLibrary->isEmpty())
@@ -239,6 +242,7 @@
 @push('scripts')
     {{-- Data island (non-executable JSON) read by public/js/listing-form.js --}}
     <script type="application/json" id="existing-images">@json($existingImages)</script>
+    <script type="application/json" id="form-errors">@json($errors->getMessages())</script>
 
     @unless ($mapsKey)
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

@@ -261,7 +261,7 @@ class ListingService
 
         foreach ($current as $image) {
             if (isset($remove[$image['url'] ?? ''])) {
-                $this->images->delete($image['public_id'] ?? null, $image['disk'] ?? 'cloudinary', $image['url'] ?? '');
+                $this->deleteFileUnlessInLibrary($image);
 
                 continue;
             }
@@ -269,6 +269,25 @@ class ListingService
         }
 
         return $kept;
+    }
+
+    /**
+     * Delete an image's underlying file, but only when it isn't kept in any
+     * user's media library. The library is a reusable collection, so its files
+     * must survive listing edits/deletion — otherwise picked images and library
+     * thumbnails break.
+     *
+     * @param  array<string, mixed>  $image
+     */
+    private function deleteFileUnlessInLibrary(array $image): void
+    {
+        $url = $image['url'] ?? '';
+
+        if ($url !== '' && Media::query()->where('url', $url)->exists()) {
+            return; // still referenced by the media library — keep the file
+        }
+
+        $this->images->delete($image['public_id'] ?? null, $image['disk'] ?? 'cloudinary', $url);
     }
 
     /**
@@ -298,7 +317,7 @@ class ListingService
     public function delete(Listing $listing): void
     {
         foreach ($listing->images ?? [] as $image) {
-            $this->images->delete($image['public_id'] ?? null, $image['disk'] ?? 'cloudinary', $image['url'] ?? '');
+            $this->deleteFileUnlessInLibrary($image);
         }
 
         $listing->delete();

@@ -19,32 +19,51 @@
         return new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
     }
 
+    // Encode to JPEG. Any failure (no 2d context, toBlob throws/returns null,
+    // tainted canvas) falls back to the original file instead of hanging.
     function drawToJpeg(draw, w, h, file, resolve) {
-        var scale = Math.min(1, MAX_DIM / Math.max(w, h));
-        var cw = Math.max(1, Math.round(w * scale));
-        var ch = Math.max(1, Math.round(h * scale));
-        var canvas = document.createElement('canvas');
-        canvas.width = cw; canvas.height = ch;
-        draw(canvas.getContext('2d'), cw, ch);
-        canvas.toBlob(function (blob) {
-            // Keep the original if compression didn't actually make it smaller.
-            if (!blob || blob.size >= file.size) { resolve(file); return; }
-            resolve(blobToFile(blob, file.name));
-        }, 'image/jpeg', QUALITY);
+        try {
+            var scale = Math.min(1, MAX_DIM / Math.max(w, h));
+            var cw = Math.max(1, Math.round(w * scale));
+            var ch = Math.max(1, Math.round(h * scale));
+            var canvas = document.createElement('canvas');
+            canvas.width = cw; canvas.height = ch;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) { resolve(file); return; }
+            draw(ctx, cw, ch);
+            canvas.toBlob(function (blob) {
+                // Keep the original if compression didn't actually make it smaller.
+                if (!blob || blob.size >= file.size) { resolve(file); return; }
+                resolve(blobToFile(blob, file.name));
+            }, 'image/jpeg', QUALITY);
+        } catch (e) {
+            resolve(file);
+        }
     }
 
     function compressFile(file) {
         return new Promise(function (resolve) {
-            if (!file.type || file.type.indexOf('image/') !== 0) { resolve(file); return; }
+            // Settle exactly once; a watchdog guarantees we never hang the form
+            // if the browser's image decoder/encoder silently stalls.
+            var done = false;
+            var timer = setTimeout(function () { settle(file); }, 15000);
+            function settle(f) {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                resolve(f || file);
+            }
+
+            if (!file.type || file.type.indexOf('image/') !== 0) { settle(file); return; }
 
             function viaImage() {
                 var url = URL.createObjectURL(file);
                 var img = new Image();
                 img.onload = function () {
                     URL.revokeObjectURL(url);
-                    drawToJpeg(function (ctx, cw, ch) { ctx.drawImage(img, 0, 0, cw, ch); }, img.naturalWidth, img.naturalHeight, file, resolve);
+                    drawToJpeg(function (ctx, cw, ch) { ctx.drawImage(img, 0, 0, cw, ch); }, img.naturalWidth, img.naturalHeight, file, settle);
                 };
-                img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+                img.onerror = function () { URL.revokeObjectURL(url); settle(file); };
                 img.src = url;
             }
 
@@ -54,7 +73,7 @@
                 try { pr = createImageBitmap(file, { imageOrientation: 'from-image' }); }
                 catch (e) { viaImage(); return; }
                 pr.then(function (bmp) {
-                    drawToJpeg(function (ctx, cw, ch) { ctx.drawImage(bmp, 0, 0, cw, ch); if (bmp.close) bmp.close(); }, bmp.width, bmp.height, file, resolve);
+                    drawToJpeg(function (ctx, cw, ch) { ctx.drawImage(bmp, 0, 0, cw, ch); if (bmp.close) bmp.close(); }, bmp.width, bmp.height, file, settle);
                 }).catch(viaImage);
             } else {
                 viaImage();
@@ -72,6 +91,7 @@
         if (!imgInput) return;
 
         var $preview = $('#media-preview');
+        var $modalPreview = $('#modal-preview'); // mirrors the strip inside the modal
         var $pickedBox = $('#picked-inputs');
         var $removeBox = $('#remove-inputs');
         var $modal = $('#gallery-modal');
@@ -113,20 +133,27 @@
             render();
         }
 
-        function render() {
-            $preview.empty();
+        // Paint the thumbnail strip into one container. Tiles carry click
+        // handlers, so each container gets its own freshly-built set.
+        function paint($container) {
+            $container.empty();
             $.each(keptExisting(), function (_, url) {
-                $preview.append(tile(url, 'saved', function () { removed[url] = true; syncRemove(); render(); }));
+                $container.append(tile(url, 'saved', function () { removed[url] = true; syncRemove(); render(); }));
             });
             $.each(picked, function (id, url) {
-                $preview.append(tile(url, 'library', function () { delete picked[id]; syncPicked(); render(); refreshLib(); }));
+                $container.append(tile(url, 'library', function () { delete picked[id]; syncPicked(); render(); refreshLib(); }));
             });
             $.each(uploads(), function (idx, file) {
-                $preview.append(tile(URL.createObjectURL(file), 'new', function () { removeUpload(idx); }));
+                $container.append(tile(URL.createObjectURL(file), 'new', function () { removeUpload(idx); }));
             });
-            if (!$preview.children().length) {
-                $preview.html('<p class="form-hint" style="margin:0">No photos added yet.</p>');
+            if (!$container.children().length) {
+                $container.html('<p class="form-hint" style="margin:0">No photos added yet.</p>');
             }
+        }
+
+        function render() {
+            paint($preview);
+            if ($modalPreview.length) paint($modalPreview);
         }
 
         // Modal open/close + tabs
@@ -147,20 +174,24 @@
         // Upload (dropzone) — selected images are compressed before they're queued.
         var busy = false;
 
+        function commitFiles(keep, files) {
+            var dt = new DataTransfer();
+            $.each(keep, function (_, f) { if (f) dt.items.add(f); });
+            $.each(files, function (_, f) { if (f) dt.items.add(f); });
+            imgInput.files = dt.files; // programmatic set does not refire 'change'
+            busy = false;
+            enforceMax(); render();
+        }
+
         function addFiles(newFiles, mergeExisting) {
             if (busy) return;
             if (!newFiles.length) { enforceMax(); render(); return; }
             busy = true;
             var keep = mergeExisting ? uploads() : [];
-            $preview.html('<p class="form-hint" style="margin:0">Compressing photos…</p>');
-            compressFiles(newFiles).then(function (out) {
-                var dt = new DataTransfer();
-                $.each(keep, function (_, f) { dt.items.add(f); });
-                $.each(out, function (_, f) { dt.items.add(f); });
-                imgInput.files = dt.files; // programmatic set does not refire 'change'
-                busy = false;
-                enforceMax(); render();
-            });
+            $preview.add($modalPreview).html('<p class="form-hint" style="margin:0">Compressing photos…</p>');
+            compressFiles(newFiles)
+                .then(function (out) { commitFiles(keep, out); })
+                .catch(function () { commitFiles(keep, newFiles); }); // store originals on failure
         }
 
         var $dropzone = $('#dropzone');
@@ -202,6 +233,115 @@
         });
 
         render();
+    });
+
+    // ================= Numeric-only fields =================
+    // type="number" still lets Chrome accept "e", "+", "." and stray symbols.
+    // Block them at the keystroke so these fields only ever hold whole numbers
+    // (a leading "-" is allowed where the field's min is negative).
+    $(function () {
+        $('.listing-form input[type="number"]').each(function () {
+            var allowNeg = parseFloat($(this).attr('min')) < 0;
+
+            $(this).on('keydown', function (e) {
+                if (e.ctrlKey || e.metaKey || e.altKey) return;   // copy/paste/shortcuts
+                var k = e.key;
+                if (!k || k.length !== 1) return;                 // arrows, Backspace, Tab…
+                if (k >= '0' && k <= '9') return;
+                if (k === '-' && allowNeg && this.selectionStart === 0) return;
+                e.preventDefault();
+            });
+
+            $(this).on('paste', function (e) {
+                var clip = (e.originalEvent || e).clipboardData || window.clipboardData;
+                if (!clip) return;
+                var text = clip.getData('text') || '';
+                var cleaned = text.replace(/[^\d-]/g, '');
+                cleaned = allowNeg
+                    ? (cleaned.charAt(0) === '-' ? '-' : '') + cleaned.replace(/-/g, '')
+                    : cleaned.replace(/-/g, '');
+                e.preventDefault();
+                if (cleaned !== '') this.value = cleaned;
+            });
+        });
+    });
+
+    // ================= Client-side validation =================
+    // A failed server validation redirects back, and browsers cannot restore a
+    // file <input> — so the user's uploaded photos would be lost. Catch the
+    // common required-field mistakes up-front and block the submit (no reload)
+    // until they're fixed, flagging each problem field in red.
+    $(function () {
+        var $form = $('#listing-form');
+        if (!$form.length) return;
+
+        function setError($field, message) {
+            $field.addClass('invalid');
+            var $msg = $field.next('.field-msg');
+            if ($msg.length) $msg.text(message);
+            else $field.after($('<p class="field-msg"></p>').text(message));
+        }
+        function clearError($field) {
+            $field.removeClass('invalid').next('.field-msg').remove();
+        }
+
+        function val(name) {
+            var $f = $form.find('[name="' + name + '"]').first();
+            return { $el: $f, v: $f.length ? String($f.val() == null ? '' : $f.val()) : '' };
+        }
+
+        var required = [
+            { name: 'type', msg: 'Select a property type.' },
+            { name: 'title', msg: 'Title is required.' },
+            { name: 'description', msg: 'Description is required.' },
+            { name: 'rent', msg: 'Enter the monthly rent.', test: function (v) { return /^\d+$/.test(v); } }
+        ];
+
+        $form.on('submit', function (e) {
+            var firstBad = null;
+
+            $.each(required, function (_, r) {
+                var f = val(r.name);
+                if (!f.$el.length) return;
+                clearError(f.$el);
+                var ok = r.test ? (f.v.trim() !== '' && r.test(f.v.trim())) : f.v.trim() !== '';
+                if (!ok) { setError(f.$el, r.msg); firstBad = firstBad || f.$el; }
+            });
+
+            // YouTube URL is optional but must be valid when provided.
+            var video = val('video_tour_url');
+            if (video.$el.length) {
+                clearError(video.$el);
+                var vv = video.v.trim();
+                if (vv !== '' && !/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(vv)) {
+                    setError(video.$el, 'Enter a valid YouTube URL.');
+                    firstBad = firstBad || video.$el;
+                }
+            }
+
+            if (firstBad) {
+                e.preventDefault();
+                firstBad.trigger('focus');
+                if (firstBad[0].scrollIntoView) firstBad[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+        // Clear a field's red mark as soon as the user starts fixing it.
+        $form.on('input change', '.invalid', function () { clearError($(this)); });
+
+        // Server-returned errors (after a redirect-back): mark those fields red
+        // too, so the user sees exactly what to fix — not just the top summary.
+        (function () {
+            var el = document.getElementById('form-errors');
+            if (!el) return;
+            var bag;
+            try { bag = JSON.parse(el.textContent || '{}'); } catch (e) { return; }
+            $.each(bag, function (key, messages) {
+                var base = key.split('.')[0]; // images.0 -> images
+                var $field = $form.find('[name="' + base + '"], [name="' + base + '[]"]').filter(':visible').first();
+                if ($field.length) setError($field, messages[0]);
+            });
+        })();
     });
 
     // ================= Location map picker =================

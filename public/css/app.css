@@ -955,6 +955,26 @@ code {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+/* Invalid field highlight (client-side checks + server-returned errors) */
+.listing-form input.invalid:not([type="checkbox"]),
+.listing-form select.invalid,
+.listing-form textarea.invalid {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+.listing-form input.invalid:focus,
+.listing-form select.invalid:focus,
+.listing-form textarea.invalid:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+.listing-form .field-msg {
+    margin: 5px 0 0;
+    color: #dc2626;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
 .form-row {
     margin-bottom: 14px;
 }

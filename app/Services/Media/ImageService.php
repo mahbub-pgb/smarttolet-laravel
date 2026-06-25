@@ -139,11 +139,21 @@ class ImageService
 
             if ($binary !== null) {
                 $name = $folder.'/'.Str::uuid()->toString().'.jpg';
-                Storage::disk('public')->put($name, $binary);
+                $ok = Storage::disk('public')->put($name, $binary);
             } else {
                 $ext = $file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg';
                 $name = $folder.'/'.Str::uuid()->toString().'.'.strtolower($ext);
-                Storage::disk('public')->putFileAs($folder, $file, basename($name));
+                $ok = Storage::disk('public')->putFileAs($folder, $file, basename($name)) !== false;
+            }
+
+            // The "public" disk is configured with throw => false, so a failed
+            // write returns false instead of raising. Verify the file actually
+            // landed before reporting success — otherwise we'd record a Media
+            // row pointing at a file that doesn't exist (a broken thumbnail).
+            if (! $ok || ! Storage::disk('public')->exists($name)) {
+                Log::error('[image] local store did not persist', ['name' => $name]);
+
+                return null;
             }
 
             return [
