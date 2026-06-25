@@ -71,6 +71,10 @@ class ListingController extends Controller
 
         $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
 
+        // Upper bound for the rent range slider, rounded up to a clean step.
+        $rentCeiling = (int) Listing::query()->publiclyVisible()->max('rent');
+        $rentCeiling = max((int) (ceil($rentCeiling / 1000) * 1000), 1000);
+
         // The pin the "Near me" search was centred on (so the JS can mark it).
         $origin = $request->filled('lat') && $request->filled('lng')
             ? ['lat' => (float) $request->input('lat'), 'lng' => (float) $request->input('lng')]
@@ -92,7 +96,7 @@ class ListingController extends Controller
             'image' => $l->images[0]['url'] ?? null,
         ])->values();
 
-        return view('listings.map', compact('listings', 'points', 'types', 'origin'));
+        return view('listings.map', compact('listings', 'points', 'types', 'origin', 'rentCeiling'));
     }
 
     /**

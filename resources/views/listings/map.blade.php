@@ -57,14 +57,26 @@
                     </select>
                 </label>
 
-                <label class="map-filter-field">
-                    Min rent
-                    <input type="number" name="min_rent" min="0" value="{{ request('min_rent') }}" placeholder="0">
-                </label>
-                <label class="map-filter-field">
-                    Max rent
-                    <input type="number" name="max_rent" min="0" value="{{ request('max_rent') }}" placeholder="Any">
-                </label>
+                @php($rentStep = 500)
+                @php($minRentVal = (int) request('min_rent', 0))
+                @php($maxRentVal = request()->filled('max_rent') ? (int) request('max_rent') : $rentCeiling)
+                <div class="map-filter-field rent-slider"
+                     data-min="0" data-max="{{ $rentCeiling }}" data-step="{{ $rentStep }}">
+                    <span class="rent-slider-label">
+                        Rent ৳<output id="rent-min-out"></output> – ৳<output id="rent-max-out"></output>
+                    </span>
+                    <div class="rent-slider-track">
+                        <div class="rent-slider-rail"></div>
+                        <div class="rent-slider-range" id="rent-range"></div>
+                        <input type="range" id="rent-min" min="0" max="{{ $rentCeiling }}"
+                               step="{{ $rentStep }}" value="{{ $minRentVal }}">
+                        <input type="range" id="rent-max" min="0" max="{{ $rentCeiling }}"
+                               step="{{ $rentStep }}" value="{{ $maxRentVal }}">
+                    </div>
+                    {{-- Actual submitted values (left blank at the extremes so we don't over-filter). --}}
+                    <input type="hidden" name="min_rent" id="rent-min-input" value="{{ request('min_rent') }}">
+                    <input type="hidden" name="max_rent" id="rent-max-input" value="{{ request('max_rent') }}">
+                </div>
                 <label class="map-filter-field">
                     Beds
                     <select name="bedrooms">
@@ -85,10 +97,14 @@
                     </select>
                 </label>
 
-                <button type="submit" class="btn btn-sm">Apply</button>
-                @if (request()->hasAny(['type', 'occupancy', 'q', 'area', 'lat', 'lng', 'min_rent', 'max_rent', 'bedrooms', 'sort', 'radius']))
-                    <a href="{{ route('listings.map') }}" class="btn btn-ghost btn-sm" id="map-reset">Clear all</a>
-                @endif
+                <div class="map-filter-actions">
+                    <button type="submit" class="btn btn-sm">Apply</button>
+                    @if (request()->hasAny(['type', 'occupancy', 'q', 'area', 'lat', 'lng', 'min_rent', 'max_rent', 'bedrooms', 'sort', 'radius']))
+                        <a href="{{ route('listings.map') }}" class="btn btn-ghost btn-sm" id="map-reset">
+                            <span class="map-filter-actions-icon" aria-hidden="true">✕</span> Clear all
+                        </a>
+                    @endif
+                </div>
             </form>
 
             <div id="map"
