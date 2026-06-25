@@ -6,35 +6,21 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Listing;
+use App\Services\Listing\ListingService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 class ListingController extends Controller
 {
+    public function __construct(private ListingService $listings) {}
+
     /** GET /listings — browse / search all approved listings. */
     public function index(Request $request): View
     {
-        $listings = Listing::query()
-            ->publiclyVisible()
-            ->with('owner:id,name,mobile,photo')
-            ->when($request->filled('q'), function ($q) use ($request) {
-                $term = (string) $request->string('q');
-                $q->where(function ($w) use ($term) {
-                    $w->where('title', 'like', "%{$term}%")
-                        ->orWhere('description', 'like', "%{$term}%")
-                        ->orWhere('area_name', 'like', "%{$term}%");
-                });
-            })
-            ->when($request->filled('area'), fn ($q) => $q->where('area_name', 'like', '%'.$request->string('area').'%'))
-            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')))
-            ->when($request->filled('min_rent'), fn ($q) => $q->where('rent', '>=', $request->integer('min_rent')))
-            ->when($request->filled('max_rent'), fn ($q) => $q->where('rent', '<=', $request->integer('max_rent')))
-            ->when($request->filled('bedrooms'), fn ($q) => $q->where('bedrooms', '>=', $request->integer('bedrooms')))
-            ->when($request->string('sort')->value() === 'price_asc', fn ($q) => $q->orderBy('rent'))
-            ->when($request->string('sort')->value() === 'price_desc', fn ($q) => $q->orderByDesc('rent'))
-            ->when($request->string('sort')->value() === 'oldest', fn ($q) => $q->oldest())
-            ->when(! $request->filled('sort') || $request->string('sort')->value() === 'newest', fn ($q) => $q->latest())
-            ->paginate(12)
+        $page = max(1, $request->integer('page', 1));
+
+        $listings = $this->listings
+            ->search($this->filters($request), 12, $page)
             ->withQueryString();
 
         $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
@@ -72,17 +58,23 @@ class ListingController extends Controller
         return view('listings.show', compact('listing', 'related', 'isPreview'));
     }
 
-    /** GET /map — all geocoded listings plotted on a map. */
+    /** GET /map — geocoded listings plotted on a map, optionally near the user. */
     public function map(Request $request): View
     {
-        $listings = Listing::query()
-            ->publiclyVisible()
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->with('owner:id,name')
-            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')))
-            ->limit(500)
-            ->get();
+        // Reuse the public search (keyword, category, geo radius, sorting) and
+        // keep only the geocoded rows the map can actually plot.
+        $listings = $this->listings
+            ->search($this->filters($request), 500, 1)
+            ->getCollection()
+            ->filter(fn (Listing $l) => $l->latitude !== null && $l->longitude !== null)
+            ->values();
+
+        $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
+
+        // The pin the "Near me" search was centred on (so the JS can mark it).
+        $origin = $request->filled('lat') && $request->filled('lng')
+            ? ['lat' => (float) $request->input('lat'), 'lng' => (float) $request->input('lng')]
+            : null;
 
         $points = $listings->map(fn (Listing $l) => [
             'id' => $l->id,
@@ -100,6 +92,40 @@ class ListingController extends Controller
             'image' => $l->images[0]['url'] ?? null,
         ])->values();
 
-        return view('listings.map', compact('listings', 'points'));
+        return view('listings.map', compact('listings', 'points', 'types', 'origin'));
+    }
+
+    /**
+     * Build the public search filter array shared by the list and map views
+     * from the request's query parameters.
+     *
+     * @return array<string, mixed>
+     */
+    private function filters(Request $request): array
+    {
+        $filters = ['_scope' => 'public'];
+
+        foreach (['q', 'area', 'type', 'occupancy', 'category', 'sort'] as $key) {
+            if ($request->filled($key)) {
+                $filters[$key] = (string) $request->input($key);
+            }
+        }
+
+        foreach (['min_rent', 'max_rent', 'bedrooms', 'bathrooms'] as $key) {
+            if ($request->filled($key)) {
+                $filters[$key] = $request->integer($key);
+            }
+        }
+
+        // Geo radius search (set by the map's "Near me" control).
+        if ($request->filled('lat') && $request->filled('lng')) {
+            $filters['lat'] = (float) $request->input('lat');
+            $filters['lng'] = (float) $request->input('lng');
+            if ($request->filled('radius')) {
+                $filters['radius'] = (float) $request->input('radius');
+            }
+        }
+
+        return $filters;
     }
 }

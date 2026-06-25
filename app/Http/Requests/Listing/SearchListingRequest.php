@@ -23,6 +23,7 @@ class SearchListingRequest extends FormRequest
             'q' => ['sometimes', 'nullable', 'string', 'max:120'],
             'type' => ['sometimes', 'nullable', 'string', 'max:40'],
             'category' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'occupancy' => ['sometimes', 'nullable', 'string', 'max:50'],
             'area' => ['sometimes', 'nullable', 'string', 'max:120'],
             'min_rent' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'max_rent' => ['sometimes', 'nullable', 'integer', 'min:0', 'gte:min_rent'],

@@ -39,6 +39,26 @@ class Listing extends Model
     /** Selectable property types. */
     public const TYPES = ['apartment', 'room', 'sublet', 'office', 'shop', 'house', 'garage', 'hostel'];
 
+    /**
+     * Ordered category pills shown in the browse/map navigation. Each pill
+     * filters by either a property `type` or a single `occupancy` rule, so the
+     * one bar can mix "Family / Bachelor" (occupancy) with the property types.
+     *
+     * @var array<int, array{key: string, label: string, icon: string, param: string, value: string}>
+     */
+    public const NAV_CATEGORIES = [
+        ['key' => 'family', 'label' => 'Family', 'icon' => '👪', 'param' => 'occupancy', 'value' => 'family_only'],
+        ['key' => 'bachelor', 'label' => 'Bachelor', 'icon' => '🧑', 'param' => 'occupancy', 'value' => 'bachelor_allowed'],
+        ['key' => 'apartment', 'label' => 'Apartment', 'icon' => '🏢', 'param' => 'type', 'value' => 'apartment'],
+        ['key' => 'room', 'label' => 'Room', 'icon' => '🛏', 'param' => 'type', 'value' => 'room'],
+        ['key' => 'sublet', 'label' => 'Sublet', 'icon' => '🏠', 'param' => 'type', 'value' => 'sublet'],
+        ['key' => 'office', 'label' => 'Office', 'icon' => '🏬', 'param' => 'type', 'value' => 'office'],
+        ['key' => 'shop', 'label' => 'Shop', 'icon' => '🛍', 'param' => 'type', 'value' => 'shop'],
+        ['key' => 'house', 'label' => 'House', 'icon' => '🏡', 'param' => 'type', 'value' => 'house'],
+        ['key' => 'hostel', 'label' => 'Hostel', 'icon' => '🛌', 'param' => 'type', 'value' => 'hostel'],
+        ['key' => 'garage', 'label' => 'Garage', 'icon' => '🚗', 'param' => 'type', 'value' => 'garage'],
+    ];
+
     /** Amenity key => human label (checkboxes on the listing form). */
     public const AMENITIES = [
         'parking' => 'Parking',

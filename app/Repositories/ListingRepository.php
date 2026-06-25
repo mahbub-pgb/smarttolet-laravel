@@ -18,7 +18,7 @@ class ListingRepository extends BaseRepository implements ListingRepositoryInter
 {
     protected function model(): Model
     {
-        return new Listing();
+        return new Listing;
     }
 
     public function findBySlug(string $slug): ?Listing
@@ -102,6 +102,11 @@ class ListingRepository extends BaseRepository implements ListingRepositoryInter
         }
         if (! empty($filters['category'])) {
             $query->where('category', $filters['category']);
+        }
+        if (! empty($filters['occupancy'])) {
+            // Match a single occupancy rule (e.g. family_only) inside the
+            // JSON array. whereJsonContains works on MySQL and SQLite (JSON1).
+            $query->whereJsonContains('occupancy_rules', $filters['occupancy']);
         }
         if (! empty($filters['area'])) {
             $query->where('area_name', 'like', '%'.$filters['area'].'%');

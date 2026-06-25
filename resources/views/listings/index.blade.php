@@ -10,8 +10,10 @@
                     <h2>All listings</h2>
                     <p>{{ $listings->total() }} {{ \Illuminate\Support\Str::plural('home', $listings->total()) }} available to rent.</p>
                 </div>
-                <a href="{{ route('listings.map', request()->only(['type'])) }}" class="btn btn-ghost btn-sm">🗺 Map view</a>
+                <a href="{{ route('listings.map', request()->only(['type', 'occupancy', 'q', 'area'])) }}" class="btn btn-ghost btn-sm">🗺 Map view</a>
             </div>
+
+            @include('partials.category-nav', ['navRoute' => 'listings.index'])
 
             <div class="layout">
                 <aside class="filters">

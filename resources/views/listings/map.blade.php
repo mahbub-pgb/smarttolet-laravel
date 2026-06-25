@@ -18,9 +18,76 @@
                     <h2>Explore on the map</h2>
                     <p>{{ $listings->count() }} {{ \Illuminate\Support\Str::plural('listing', $listings->count()) }} plotted. Click a pin for details.</p>
                 </div>
-                <a href="{{ route('listings.index') }}" class="btn btn-ghost btn-sm">☰ List view</a>
+                <a href="{{ route('listings.index', request()->except('page')) }}" class="btn btn-ghost btn-sm">☰ List view</a>
             </div>
-            <div id="map" data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}" data-zoom="{{ $mapDefaultZoom }}" data-zoom-pinned="{{ $mapPinnedZoom }}" data-lat="{{ $mapDefaultLat }}" data-lng="{{ $mapDefaultLng }}"></div>
+
+            @include('partials.category-nav', ['navRoute' => 'listings.map'])
+
+            {{-- Distance / "near me" + sort controls. The near-me button asks the
+                 browser for the user's location, then reloads with lat/lng/radius
+                 so the server returns only nearby listings (sorted nearest). --}}
+            <form method="GET" action="{{ route('listings.map') }}" class="map-filters" id="map-filters">
+                {{-- Preserve the active category + keyword filters across reloads. --}}
+                @foreach (['type', 'occupancy', 'q', 'area'] as $keep)
+                    @if (request()->filled($keep))
+                        <input type="hidden" name="{{ $keep }}" value="{{ request($keep) }}">
+                    @endif
+                @endforeach
+                <input type="hidden" name="lat" id="near-lat" value="{{ request('lat') }}">
+                <input type="hidden" name="lng" id="near-lng" value="{{ request('lng') }}">
+
+                <button type="button" id="near-me" class="btn btn-sm">📍 Near me</button>
+
+                <label class="map-filter-field">
+                    Distance
+                    <select name="radius" id="near-radius">
+                        @foreach ([1 => 'Near me', 2 => '2 km', 5 => '5 km', 10 => '10 km'] as $km => $label)
+                            <option value="{{ $km }}" @selected((string) request('radius', 1) === (string) $km)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="map-filter-field">
+                    Min rent
+                    <input type="number" name="min_rent" min="0" value="{{ request('min_rent') }}" placeholder="0">
+                </label>
+                <label class="map-filter-field">
+                    Max rent
+                    <input type="number" name="max_rent" min="0" value="{{ request('max_rent') }}" placeholder="Any">
+                </label>
+                <label class="map-filter-field">
+                    Beds
+                    <select name="bedrooms">
+                        <option value="">Any</option>
+                        @foreach ([1, 2, 3, 4] as $b)
+                            <option value="{{ $b }}" @selected(request('bedrooms') == $b)>{{ $b }}+</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="map-filter-field">
+                    Sort
+                    <select name="sort">
+                        <option value="">Default</option>
+                        <option value="nearest" @selected(request('sort') === 'nearest')>Nearest</option>
+                        <option value="price_asc" @selected(request('sort') === 'price_asc')>Price: low to high</option>
+                        <option value="price_desc" @selected(request('sort') === 'price_desc')>Price: high to low</option>
+                        <option value="popular" @selected(request('sort') === 'popular')>Most viewed</option>
+                    </select>
+                </label>
+
+                <button type="submit" class="btn btn-sm">Apply</button>
+                @if (request()->hasAny(['lat', 'lng', 'min_rent', 'max_rent', 'bedrooms', 'sort', 'radius']))
+                    <a href="{{ route('listings.map', request()->only(['type', 'occupancy'])) }}" class="btn btn-ghost btn-sm" id="map-reset">Reset</a>
+                @endif
+            </form>
+
+            <div id="map"
+                 data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}"
+                 data-zoom="{{ $mapDefaultZoom }}"
+                 data-zoom-pinned="{{ $mapPinnedZoom }}"
+                 data-lat="{{ $mapDefaultLat }}"
+                 data-lng="{{ $mapDefaultLng }}"
+                 @if ($origin) data-origin-lat="{{ $origin['lat'] }}" data-origin-lng="{{ $origin['lng'] }}" @endif></div>
         </div>
     </section>
 
