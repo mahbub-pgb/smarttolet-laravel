@@ -55,7 +55,7 @@ abstract class ListingFormRequest extends FormRequest
             'occupancy_rules.*' => ['string', Rule::in(array_keys(Listing::OCCUPANCY_RULES))],
 
             // Media
-            'images' => ['nullable', 'array', 'max:10'],
+            'images' => ['nullable', 'array', 'max:5'],
             'images.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'picked' => ['nullable', 'array', 'max:10'],
             'picked.*' => ['integer', Rule::exists('media', 'id')->where('owner_id', $this->user()?->id)],

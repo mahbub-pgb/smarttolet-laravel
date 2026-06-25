@@ -83,7 +83,7 @@ img {
 .nav-links a {
     padding: 8px 14px;
     border-radius: 8px;
-    color: var(--muted);
+    /* color: var(--muted); */
     font-weight: 500;
 }
 .nav-links a:hover {
