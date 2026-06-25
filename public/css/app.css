@@ -647,3 +647,20 @@ code { background: var(--bg); padding: 1px 6px; border-radius: 5px; font-size: 0
 .gm-style-iw-d { overflow: hidden !important; }
 .gm-style .gm-style-iw-c { padding: 0 !important; }
 .gm-style .gm-style-iw-c .map-pop { width: 220px; }
+
+/* Lightbox prev/next navigation arrows */
+.lightbox-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 52px; height: 52px; border: none; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14); color: #fff; cursor: pointer;
+    font-size: 2rem; line-height: 1; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+}
+.lightbox-nav:hover { background: rgba(255, 255, 255, 0.28); }
+.lightbox-prev { left: 24px; }
+.lightbox-next { right: 24px; }
+@media (max-width: 640px) {
+    .lightbox-nav { width: 42px; height: 42px; font-size: 1.6rem; }
+    .lightbox-prev { left: 10px; }
+    .lightbox-next { right: 10px; }
+}

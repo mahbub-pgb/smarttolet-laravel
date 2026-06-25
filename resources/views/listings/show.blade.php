@@ -133,7 +133,9 @@
     {{-- ===== Lightbox ===== --}}
     <div class="lightbox" id="lightbox" aria-hidden="true">
         <button class="lightbox-close" id="lightbox-close" aria-label="Close">✕</button>
+        <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Previous image">‹</button>
         <img id="lightbox-img" src="" alt="">
+        <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Next image">›</button>
     </div>
 @endsection
 

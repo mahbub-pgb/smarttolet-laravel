@@ -2,22 +2,54 @@
 (function ($) {
     'use strict';
 
-    // ---- Gallery + lightbox ----
+    // ---- Gallery + lightbox (with keyboard + arrow navigation) ----
     $(function () {
         var $lead = $('#gallery-lead');
         if (!$lead.length) return;
 
-        $('.gthumb').on('click', function () {
-            $lead.attr('src', $(this).data('src'));
-            $('.gthumb').removeClass('active');
-            $(this).addClass('active');
-        });
+        // All gallery image sources, in order (thumbnails render only when > 1 image).
+        var images = $('.gthumb').map(function () { return $(this).data('src'); }).get();
+        if (!images.length) images = [$lead.attr('src')];
+        var current = 0;
 
         var $lb = $('#lightbox');
         var $lbImg = $('#lightbox-img');
-        $lead.on('click', function () { $lbImg.attr('src', $lead.attr('src')); $lb.addClass('open'); });
-        $('#lightbox-close').on('click', function () { $lb.removeClass('open'); });
-        $lb.on('click', function (e) { if (e.target === this) $lb.removeClass('open'); });
+
+        // Hide the prev/next arrows when there's nothing to navigate.
+        if (images.length <= 1) $('#lightbox-prev, #lightbox-next').hide();
+
+        function wrap(i) { return (i + images.length) % images.length; }
+
+        // Update the main gallery image (thumbnail click).
+        function setLead(i) {
+            current = wrap(i);
+            $lead.attr('src', images[current]);
+            $('.gthumb').removeClass('active').eq(current).addClass('active');
+        }
+
+        // Show a given index inside the open lightbox.
+        function showLb(i) {
+            current = wrap(i);
+            $lbImg.attr('src', images[current]);
+        }
+        function openLb() { $lb.addClass('open'); showLb(current); }
+        function closeLb() { $lb.removeClass('open'); }
+
+        $('.gthumb').on('click', function () { setLead($(this).index()); });
+        $lead.on('click', openLb);
+
+        $('#lightbox-close').on('click', closeLb);
+        $('#lightbox-prev').on('click', function (e) { e.stopPropagation(); showLb(current - 1); });
+        $('#lightbox-next').on('click', function (e) { e.stopPropagation(); showLb(current + 1); });
+        $lb.on('click', function (e) { if (e.target === this) closeLb(); });
+
+        // Keyboard: Esc closes, ←/→ navigate — only while the lightbox is open.
+        $(document).on('keydown', function (e) {
+            if (!$lb.hasClass('open')) return;
+            if (e.key === 'Escape') { closeLb(); }
+            else if (e.key === 'ArrowLeft') { showLb(current - 1); }
+            else if (e.key === 'ArrowRight') { showLb(current + 1); }
+        });
     });
 
     function dest() {
