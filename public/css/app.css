@@ -572,3 +572,33 @@ code { background: var(--bg); padding: 1px 6px; border-radius: 5px; font-size: 0
 .pill-approved { background: #dcfce7; color: #15803d; }
 .pill-rejected { background: #fee2e2; color: #b91c1c; }
 .pill-rented { background: #dbeafe; color: #1d4ed8; }
+
+/* ===================================================================== */
+/* Single listing: gallery, lightbox, video, directions                  */
+/* ===================================================================== */
+
+.alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+.gallery2-main { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: #000; }
+.gallery2-main img { width: 100%; height: 420px; object-fit: cover; cursor: zoom-in; display: block; }
+.gallery2-thumbs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.gthumb { padding: 0; border: 2px solid transparent; border-radius: 9px; overflow: hidden; cursor: pointer; width: 84px; height: 64px; background: none; }
+.gthumb img { width: 100%; height: 100%; object-fit: cover; }
+.gthumb.active { border-color: var(--brand); }
+
+.lightbox {
+    position: fixed; inset: 0; z-index: 200; background: rgba(0, 0, 0, 0.88);
+    display: none; align-items: center; justify-content: center; padding: 30px;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 95%; max-height: 92vh; border-radius: 8px; }
+.lightbox-close { position: absolute; top: 18px; right: 24px; background: none; border: none; color: #fff; font-size: 1.8rem; cursor: pointer; }
+
+.video-embed { position: relative; width: 100%; padding-top: 56.25%; border-radius: var(--radius); overflow: hidden; margin-top: 6px; }
+.video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.loc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+    .gallery2-main img { height: 260px; }
+}

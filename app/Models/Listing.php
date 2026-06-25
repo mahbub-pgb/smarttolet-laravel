@@ -214,4 +214,28 @@ class Listing extends Model
     {
         return $this->latitude !== null && $this->longitude !== null;
     }
+
+    /** Whether this listing is currently visible to the public. */
+    public function isPubliclyVisible(): bool
+    {
+        return $this->status === self::STATUS_APPROVED
+            && ($this->expires_at === null || $this->expires_at->isFuture());
+    }
+
+    /**
+     * Normalised YouTube embed URL for the video tour, or null when the stored
+     * URL is empty or not a recognisable YouTube link.
+     */
+    public function youtubeEmbedUrl(): ?string
+    {
+        if (empty($this->video_tour_url)) {
+            return null;
+        }
+
+        if (preg_match('#(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/|shorts/|v/))([\w-]{11})#i', $this->video_tour_url, $m)) {
+            return 'https://www.youtube.com/embed/'.$m[1];
+        }
+
+        return null;
+    }
 }

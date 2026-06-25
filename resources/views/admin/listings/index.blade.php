@@ -39,9 +39,7 @@
                         <td><span class="pill pill-{{ $listing->status }}">{{ ucfirst($listing->status) }}</span></td>
                         <td>
                             <div class="row-actions">
-                                @if ($listing->status === \App\Models\Listing::STATUS_APPROVED)
-                                    <a href="{{ route('listings.show', $listing->slug) }}" target="_blank" class="btn btn-ghost btn-sm">View</a>
-                                @endif
+                                <a href="{{ route('listings.show', $listing->slug) }}" target="_blank" class="btn btn-ghost btn-sm">Preview</a>
 
                                 @if ($listing->status !== \App\Models\Listing::STATUS_APPROVED)
                                     <form method="POST" action="{{ route('admin.listings.approve', $listing) }}">

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Listing;
 
+use App\Enums\Role;
 use App\Exceptions\ApiException;
 use App\Models\ContactView;
 use App\Models\Listing;
@@ -92,7 +93,11 @@ class ListingService
 
         [$address, $areaName] = $this->resolveLocation($data);
 
-        $asDraft = (bool) ($data['as_draft'] ?? false);
+        // Admins / super admins publish immediately — no review queue.
+        $autoPublish = $this->canSelfPublish($user);
+        $status = $autoPublish
+            ? Listing::STATUS_APPROVED
+            : (($data['as_draft'] ?? false) ? Listing::STATUS_DRAFT : Listing::STATUS_PENDING);
 
         $listing = $this->listings->create([
             'owner_id' => $user->id,
@@ -117,12 +122,20 @@ class ListingService
             'occupancy_rules' => $data['occupancy_rules'] ?? [],
             'images' => $images,
             'video_tour_url' => $data['video_tour_url'] ?? null,
-            'status' => $asDraft ? Listing::STATUS_DRAFT : Listing::STATUS_PENDING,
+            'status' => $status,
+            'approved_at' => $autoPublish ? now() : null,
+            'expires_at' => $autoPublish ? now()->addDays(self::LIFETIME_DAYS) : null,
         ]);
 
         $this->syncGeoPoint($listing);
 
         return $listing;
+    }
+
+    /** Admins and super admins publish their own listings without review. */
+    private function canSelfPublish(User $user): bool
+    {
+        return $user->hasRole(Role::Admin, Role::SuperAdmin);
     }
 
     /**
@@ -153,7 +166,14 @@ class ListingService
         // Without it (e.g. the API), the legacy rule applies: editing an
         // approved listing's reviewable fields re-queues it for moderation.
         if (array_key_exists('as_draft', $data)) {
-            if ($listing->status === Listing::STATUS_APPROVED) {
+            if ($listing->owner && $this->canSelfPublish($listing->owner)) {
+                // Publishers stay published; their edits never re-enter review.
+                $data['status'] = Listing::STATUS_APPROVED;
+                if ($listing->approved_at === null) {
+                    $data['approved_at'] = now();
+                    $data['expires_at'] = now()->addDays(self::LIFETIME_DAYS);
+                }
+            } elseif ($listing->status === Listing::STATUS_APPROVED) {
                 if ($this->touchesReviewableFields($data)) {
                     $data['status'] = Listing::STATUS_PENDING;
                 }

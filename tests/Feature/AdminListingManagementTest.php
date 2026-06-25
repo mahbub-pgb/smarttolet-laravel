@@ -86,6 +86,76 @@ class AdminListingManagementTest extends TestCase
             ->assertDontSee('Approved one');
     }
 
+    public function test_admin_created_listing_is_auto_published(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin, 'web')->post(route('dashboard.listings.store'), [
+            'type' => 'apartment',
+            'title' => 'Admin published flat',
+            'description' => 'No review needed for admin listings.',
+            'rent' => 30000,
+            'latitude' => 23.75,
+            'longitude' => 90.39,
+            'area_name' => 'Gulshan',
+            'address' => '1, Gulshan',
+            'as_draft' => 0,
+        ])->assertRedirect(route('dashboard'));
+
+        $listing = Listing::where('owner_id', $admin->id)->firstOrFail();
+        $this->assertSame(Listing::STATUS_APPROVED, $listing->status);
+        $this->assertNotNull($listing->approved_at);
+        $this->assertSame(1, Listing::query()->publiclyVisible()->whereKey($listing->id)->count());
+    }
+
+    public function test_regular_user_listing_still_requires_review(): void
+    {
+        $user = User::factory()->create(['role' => Role::User->value]);
+
+        $this->actingAs($user, 'web')->post(route('dashboard.listings.store'), [
+            'type' => 'apartment',
+            'title' => 'Normal user flat',
+            'description' => 'Should go to pending.',
+            'rent' => 12000,
+            'latitude' => 23.75,
+            'longitude' => 90.39,
+            'area_name' => 'Mirpur',
+            'address' => '1, Mirpur',
+            'as_draft' => 0,
+        ]);
+
+        $this->assertSame(Listing::STATUS_PENDING, Listing::where('owner_id', $user->id)->value('status'));
+    }
+
+    public function test_admin_can_preview_a_pending_listing(): void
+    {
+        $listing = Listing::factory()->pending()->create(['title' => 'Hidden pending flat']);
+
+        $this->actingAs($this->admin(), 'web')
+            ->get(route('listings.show', $listing->slug))
+            ->assertOk()
+            ->assertSee('Hidden pending flat')
+            ->assertSee('Preview');
+    }
+
+    public function test_guest_cannot_view_a_pending_listing(): void
+    {
+        $listing = Listing::factory()->pending()->create();
+
+        $this->get(route('listings.show', $listing->slug))->assertNotFound();
+    }
+
+    public function test_youtube_url_renders_as_an_embed(): void
+    {
+        $listing = Listing::factory()->create([
+            'video_tour_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        ]);
+
+        $this->get(route('listings.show', $listing->slug))
+            ->assertOk()
+            ->assertSee('youtube.com/embed/dQw4w9WgXcQ');
+    }
+
     public function test_owner_can_attach_a_library_image_when_creating_a_listing(): void
     {
         $user = User::factory()->create();

@@ -43,13 +43,19 @@ class ListingController extends Controller
     }
 
     /** GET /listings/{slug} — single listing detail. */
-    public function show(string $slug): View
+    public function show(Request $request, string $slug): View
     {
         $listing = Listing::query()
-            ->publiclyVisible()
             ->with('owner:id,name,mobile,photo')
             ->where('slug', $slug)
             ->firstOrFail();
+
+        // Non-approved listings are previewable only by the owner or staff
+        // (so admins can review a listing before approving or deleting it).
+        $viewer = $request->user();
+        $canPreview = $viewer && ($listing->isOwnedBy($viewer) || $viewer->isStaff());
+
+        abort_unless($listing->isPubliclyVisible() || $canPreview, 404);
 
         $listing->increment('view_count');
 
@@ -61,7 +67,9 @@ class ListingController extends Controller
             ->limit(3)
             ->get();
 
-        return view('listings.show', compact('listing', 'related'));
+        $isPreview = ! $listing->isPubliclyVisible();
+
+        return view('listings.show', compact('listing', 'related', 'isPreview'));
     }
 
     /** GET /map — all geocoded listings plotted on a map. */
