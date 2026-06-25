@@ -11,7 +11,19 @@
         <div class="preview-price">৳{{ number_format($listing->rent) }}<small>/mo</small></div>
     </div>
 
-    @if ($listing->status === \App\Models\Listing::STATUS_REJECTED && $listing->rejection_reason)
+    @if ($listing->rejections->isNotEmpty())
+        <div class="alert alert-error" style="margin-bottom:16px">
+            <strong>Rejection history ({{ $listing->rejections->count() }})</strong>
+            <ul class="reject-history">
+                @foreach ($listing->rejections as $rejection)
+                    <li>
+                        <span class="reject-when">{{ $rejection->created_at->format('d M Y, h:i A') }}@if ($rejection->moderator) · {{ $rejection->moderator->name }}@endif</span>
+                        {{ $rejection->reason }}
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @elseif ($listing->rejection_reason)
         <div class="alert alert-error" style="margin-bottom:16px"><strong>Rejected:</strong> {{ $listing->rejection_reason }}</div>
     @endif
 

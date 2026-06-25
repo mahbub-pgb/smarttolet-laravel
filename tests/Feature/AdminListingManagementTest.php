@@ -54,15 +54,58 @@ class AdminListingManagementTest extends TestCase
 
     public function test_admin_can_reject_a_listing_with_a_message(): void
     {
+        $admin = $this->admin();
         $listing = Listing::factory()->pending()->create();
 
-        $this->actingAs($this->admin(), 'web')
+        $this->actingAs($admin, 'web')
             ->post(route('admin.listings.reject', $listing), ['reason' => 'Photos do not match the property.'])
             ->assertRedirect();
 
         $fresh = $listing->fresh();
         $this->assertSame(Listing::STATUS_REJECTED, $fresh->status);
         $this->assertSame('Photos do not match the property.', $fresh->rejection_reason);
+
+        // The rejection is logged in the history with the moderator.
+        $this->assertDatabaseHas('listing_rejections', [
+            'listing_id' => $listing->id,
+            'moderator_id' => $admin->id,
+            'reason' => 'Photos do not match the property.',
+        ]);
+    }
+
+    public function test_every_rejection_is_tracked_in_history(): void
+    {
+        $admin = $this->admin();
+        $listing = Listing::factory()->pending()->create();
+
+        // First rejection.
+        $this->actingAs($admin, 'web')
+            ->post(route('admin.listings.reject', $listing), ['reason' => 'First reason: bad photos.']);
+
+        // Owner resubmits (back to pending), admin rejects again.
+        $listing->fresh()->update(['status' => Listing::STATUS_PENDING]);
+        $this->actingAs($admin, 'web')
+            ->post(route('admin.listings.reject', $listing), ['reason' => 'Second reason: wrong rent.']);
+
+        $this->assertSame(2, $listing->rejections()->count());
+        $this->assertEqualsCanonicalizing(
+            ['First reason: bad photos.', 'Second reason: wrong rent.'],
+            $listing->rejections()->pluck('reason')->all(),
+        );
+    }
+
+    public function test_owner_sees_full_rejection_history_on_edit_form(): void
+    {
+        $user = User::factory()->create();
+        $listing = Listing::factory()->ownedBy($user)->create(['status' => Listing::STATUS_REJECTED]);
+        $listing->rejections()->create(['moderator_id' => null, 'reason' => 'Old reason from round one.']);
+        $listing->rejections()->create(['moderator_id' => null, 'reason' => 'Newer reason from round two.']);
+
+        $this->actingAs($user, 'web')
+            ->get(route('dashboard.listings.edit', $listing))
+            ->assertOk()
+            ->assertSee('Old reason from round one.')
+            ->assertSee('Newer reason from round two.');
     }
 
     public function test_rejection_requires_a_message(): void
@@ -189,6 +232,34 @@ class AdminListingManagementTest extends TestCase
             ->assertSee('Pending modal preview')
             ->assertSee('Approve &amp; publish', false)
             ->assertDontSee('<!DOCTYPE', false); // fragment only, no layout
+    }
+
+    public function test_admin_preview_shows_full_rejection_history(): void
+    {
+        $listing = Listing::factory()->create(['status' => Listing::STATUS_REJECTED]);
+        $listing->rejections()->create(['moderator_id' => null, 'reason' => 'Round one: blurry photos.']);
+        $listing->rejections()->create(['moderator_id' => null, 'reason' => 'Round two: rent looks wrong.']);
+
+        $this->actingAs($this->admin(), 'web')
+            ->get(route('admin.listings.preview', $listing))
+            ->assertOk()
+            ->assertSee('Rejection history')
+            ->assertSee('Round one: blurry photos.')
+            ->assertSee('Round two: rent looks wrong.');
+    }
+
+    public function test_admin_preview_falls_back_to_legacy_reason_without_history(): void
+    {
+        // A listing rejected before the history table existed: reason only.
+        $listing = Listing::factory()->create([
+            'status' => Listing::STATUS_REJECTED,
+            'rejection_reason' => 'Legacy single reason.',
+        ]);
+
+        $this->actingAs($this->admin(), 'web')
+            ->get(route('admin.listings.preview', $listing))
+            ->assertOk()
+            ->assertSee('Legacy single reason.');
     }
 
     public function test_non_admin_cannot_load_preview_fragment(): void

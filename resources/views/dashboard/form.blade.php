@@ -22,10 +22,23 @@
                 <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm">← Back</a>
             </div>
 
-            @if ($isEdit && $listing->status === \App\Models\Listing::STATUS_REJECTED && $listing->rejection_reason)
+            @if ($isEdit && $listing->rejections->isNotEmpty())
                 <div class="alert alert-warning">
-                    <strong>This listing was rejected.</strong> {{ $listing->rejection_reason }}
-                    <br><small>Make the changes below and submit again for review.</small>
+                    <strong>
+                        @if ($listing->status === \App\Models\Listing::STATUS_REJECTED)
+                            This listing was rejected — fix the points below and resubmit for review.
+                        @else
+                            Rejection history
+                        @endif
+                    </strong>
+                    <ul class="reject-history">
+                        @foreach ($listing->rejections as $rejection)
+                            <li>
+                                <span class="reject-when">{{ $rejection->created_at->format('d M Y, h:i A') }}</span>
+                                {{ $rejection->reason }}
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 

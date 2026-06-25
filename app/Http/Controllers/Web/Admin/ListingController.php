@@ -44,7 +44,7 @@ class ListingController extends Controller
     /** GET /admin/listings/{listing}/preview — HTML fragment for the modal. */
     public function preview(Listing $listing): View
     {
-        $listing->loadMissing('owner:id,name,mobile,photo');
+        $listing->loadMissing(['owner:id,name,mobile,photo', 'rejections.moderator:id,name']);
 
         return view('admin.listings._preview', compact('listing'));
     }
@@ -66,7 +66,7 @@ class ListingController extends Controller
             'reason.required' => 'Please write a short reason so the owner knows what to fix.',
         ]);
 
-        $this->listings->moderate($listing, 'reject', $data['reason']);
+        $this->listings->moderate($listing, 'reject', $data['reason'], $request->user());
 
         return back()->with('status', "“{$listing->title}” rejected. The owner has been notified.");
     }

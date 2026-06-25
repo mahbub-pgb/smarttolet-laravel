@@ -40,6 +40,7 @@ class ListingModerationController extends Controller
             $listing,
             $request->validated('action'),
             $request->validated('reason'),
+            $request->user(),
         );
 
         return $this->ok(new ListingResource($listing), 'Listing moderated.');

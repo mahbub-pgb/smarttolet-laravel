@@ -61,6 +61,8 @@ class DashboardListingController extends Controller
     {
         $this->authorizeOwner($request, $listing);
 
+        $listing->loadMissing('rejections');
+
         return view('dashboard.form', [
             'user' => $request->user(),
             'listing' => $listing,

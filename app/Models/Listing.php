@@ -173,6 +173,12 @@ class Listing extends Model
         return $this->hasMany(Report::class);
     }
 
+    /** Full rejection history, newest first. */
+    public function rejections(): HasMany
+    {
+        return $this->hasMany(ListingRejection::class)->latest();
+    }
+
     public function visits(): HasMany
     {
         return $this->hasMany(ListingVisit::class);

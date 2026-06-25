@@ -374,7 +374,7 @@ class ListingService
 
     // --- Moderation ------------------------------------------------------
 
-    public function moderate(Listing $listing, string $action, ?string $reason = null): Listing
+    public function moderate(Listing $listing, string $action, ?string $reason = null, ?User $moderator = null): Listing
     {
         if ($action === 'approve') {
             $listing->forceFill([
@@ -393,6 +393,12 @@ class ListingService
                 'status' => Listing::STATUS_REJECTED,
                 'rejection_reason' => $reason,
             ])->save();
+
+            // Keep a full history of every rejection (who, when, why).
+            $listing->rejections()->create([
+                'moderator_id' => $moderator?->id,
+                'reason' => (string) $reason,
+            ]);
 
             $this->notifications->notify($listing->owner_id, 'listing_rejected', [
                 'listing_id' => $listing->id,
