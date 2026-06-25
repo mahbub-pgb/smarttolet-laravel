@@ -15,6 +15,39 @@ class SettingsController extends Controller
 {
     public function __construct(private SettingsService $settings) {}
 
+    /** GET /admin/settings/maps — manage map zoom levels + browser key. */
+    public function maps(): View
+    {
+        return view('admin.settings.maps', [
+            'settings' => $this->settings->adminView(),
+        ]);
+    }
+
+    /** POST /admin/settings/maps — persist map zoom levels + browser key. */
+    public function updateMaps(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'map_default_zoom' => ['required', 'integer', 'between:0,22'],
+            'map_pinned_zoom' => ['required', 'integer', 'between:0,22'],
+            'map_default_lat' => ['required', 'numeric', 'between:-90,90'],
+            'map_default_lng' => ['required', 'numeric', 'between:-180,180'],
+            'google_maps_browser_key' => ['nullable', 'string', 'max:255'],
+        ], [
+            'map_default_zoom.between' => 'Zoom must be between 0 (whole world) and 22 (street level).',
+            'map_pinned_zoom.between' => 'Zoom must be between 0 (whole world) and 22 (street level).',
+        ]);
+
+        $this->settings->update([
+            'map_default_zoom' => (int) $data['map_default_zoom'],
+            'map_pinned_zoom' => (int) $data['map_pinned_zoom'],
+            'map_default_lat' => (float) $data['map_default_lat'],
+            'map_default_lng' => (float) $data['map_default_lng'],
+            'google_maps_browser_key' => $data['google_maps_browser_key'] ?? null,
+        ]);
+
+        return back()->with('status', 'Map settings saved.');
+    }
+
     /** GET /admin/settings/sms — manage bulk SMS credentials. */
     public function sms(): View
     {

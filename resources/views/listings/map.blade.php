@@ -20,7 +20,7 @@
                 </div>
                 <a href="{{ route('listings.index') }}" class="btn btn-ghost btn-sm">☰ List view</a>
             </div>
-            <div id="map" data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}"></div>
+            <div id="map" data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}" data-zoom="{{ $mapDefaultZoom }}" data-zoom-pinned="{{ $mapPinnedZoom }}" data-lat="{{ $mapDefaultLat }}" data-lng="{{ $mapDefaultLng }}"></div>
         </div>
     </section>
 

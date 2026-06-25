@@ -359,14 +359,28 @@
         });
     }
 
+    // Admin-configured zoom levels (data attributes on #pick-map), with fallbacks.
+    function mapZoom(el, kind, fallback) {
+        var v = parseInt($(el).data(kind), 10);
+        return isNaN(v) ? fallback : v;
+    }
+
+    // Admin-configured default centre coordinate (data-default-lat / -lng).
+    function mapDefaultCoord(el, kind, fallback) {
+        var v = parseFloat($(el).data(kind));
+        return isNaN(v) ? fallback : v;
+    }
+
     window.initListingMap = function () {
         var el = document.getElementById('pick-map');
         if (!el) return;
-        var startLat = parseFloat($(el).data('lat')) || 23.8103;
-        var startLng = parseFloat($(el).data('lng')) || 90.4125;
+        var startLat = parseFloat($(el).data('lat')) || mapDefaultCoord(el, 'default-lat', 23.8103);
+        var startLng = parseFloat($(el).data('lng')) || mapDefaultCoord(el, 'default-lng', 90.4125);
         var hasPin = !!($(el).data('lat') && $(el).data('lng'));
+        var defaultZoom = mapZoom(el, 'zoom', 12);
+        var pinnedZoom = mapZoom(el, 'zoom-pinned', 16);
 
-        var map = new google.maps.Map(el, { center: { lat: startLat, lng: startLng }, zoom: hasPin ? 16 : 12, mapTypeControl: false, streetViewControl: false });
+        var map = new google.maps.Map(el, { center: { lat: startLat, lng: startLng }, zoom: hasPin ? pinnedZoom : defaultZoom, mapTypeControl: false, streetViewControl: false });
         var marker = new google.maps.Marker({ map: map, position: { lat: startLat, lng: startLng }, draggable: true });
         var geocoder = new google.maps.Geocoder();
         if (hasPin) { $('#latitude').val(startLat.toFixed(7)); $('#longitude').val(startLng.toFixed(7)); }
@@ -387,14 +401,14 @@
             var ac = new google.maps.places.Autocomplete(search, { fields: ['geometry', 'formatted_address'] });
             ac.addListener('place_changed', function () {
                 var p = ac.getPlace();
-                if (p.geometry) { map.setZoom(16); setPin(p.geometry.location.lat(), p.geometry.location.lng(), true); }
+                if (p.geometry) { map.setZoom(pinnedZoom); setPin(p.geometry.location.lat(), p.geometry.location.lng(), true); }
             });
         }
 
         $('#use-location').on('click', function () {
             if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
             navigator.geolocation.getCurrentPosition(
-                function (pos) { map.setZoom(16); setPin(pos.coords.latitude, pos.coords.longitude, true); },
+                function (pos) { map.setZoom(pinnedZoom); setPin(pos.coords.latitude, pos.coords.longitude, true); },
                 function () { alert('Could not get your location. Please allow location access or pick on the map.'); }
             );
         });
@@ -405,11 +419,13 @@
         var el = document.getElementById('pick-map');
         if (!el || $(el).data('maps') !== 'leaflet') return;
 
-        var startLat = parseFloat($(el).data('lat')) || 23.8103;
-        var startLng = parseFloat($(el).data('lng')) || 90.4125;
+        var startLat = parseFloat($(el).data('lat')) || mapDefaultCoord(el, 'default-lat', 23.8103);
+        var startLng = parseFloat($(el).data('lng')) || mapDefaultCoord(el, 'default-lng', 90.4125);
         var hasPin = !!($(el).data('lat') && $(el).data('lng'));
+        var defaultZoom = mapZoom(el, 'zoom', 12);
+        var pinnedZoom = mapZoom(el, 'zoom-pinned', 16);
 
-        var map = L.map(el).setView([startLat, startLng], hasPin ? 16 : 12);
+        var map = L.map(el).setView([startLat, startLng], hasPin ? pinnedZoom : defaultZoom);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
         var marker = L.marker([startLat, startLng], { draggable: true }).addTo(map);
         if (hasPin) { $('#latitude').val(startLat.toFixed(7)); $('#longitude').val(startLng.toFixed(7)); }
@@ -428,7 +444,7 @@
         map.on('click', function (e) { setPin(e.latlng.lat, e.latlng.lng); });
         $('#use-location').on('click', function () {
             if (!navigator.geolocation) return;
-            navigator.geolocation.getCurrentPosition(function (pos) { map.setView([pos.coords.latitude, pos.coords.longitude], 16); setPin(pos.coords.latitude, pos.coords.longitude); });
+            navigator.geolocation.getCurrentPosition(function (pos) { map.setView([pos.coords.latitude, pos.coords.longitude], pinnedZoom); setPin(pos.coords.latitude, pos.coords.longitude); });
         });
     });
 })(jQuery);

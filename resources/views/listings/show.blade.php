@@ -91,6 +91,7 @@
                             <div id="map" style="height:360px;margin-top:12px;border-radius:var(--radius)"
                                  data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}"
                                  data-lat="{{ $listing->latitude }}" data-lng="{{ $listing->longitude }}"
+                                 data-zoom="{{ $mapPinnedZoom }}"
                                  data-title="{{ $listing->title }}"></div>
                             <p id="dir-info" class="form-hint" style="margin-top:8px;display:none"></p>
                         @endif

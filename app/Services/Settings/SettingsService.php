@@ -37,6 +37,15 @@ class SettingsService
             'google_maps_browser_key' => ['default' => config('geo.google.browser_key'), 'secret' => false],
             'google_maps_server_key' => ['default' => config('geo.google.server_key'), 'secret' => true],
 
+            // Map zoom levels (0-22). "default" is used when no pin is set yet;
+            // "pinned" is used once a location is chosen / shown on a listing.
+            'map_default_zoom' => ['default' => (int) config('geo.map.default_zoom', 12), 'secret' => false],
+            'map_pinned_zoom' => ['default' => (int) config('geo.map.pinned_zoom', 16), 'secret' => false],
+
+            // Default map centre — where the browse map and empty pickers open.
+            'map_default_lat' => ['default' => (float) config('geo.map.default_lat', 23.8103), 'secret' => false],
+            'map_default_lng' => ['default' => (float) config('geo.map.default_lng', 90.4125), 'secret' => false],
+
             // SMS
             'sms_provider' => ['default' => config('sms.default'), 'secret' => false],
             'sms_sender_id' => ['default' => config('sms.sender_id'), 'secret' => false],

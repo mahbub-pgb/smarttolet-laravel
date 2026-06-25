@@ -22,6 +22,14 @@ return [
         'geocode_endpoint' => env('GOOGLE_GEOCODE_ENDPOINT', 'https://maps.googleapis.com/maps/api/geocode/json'),
     ],
 
+    // Default map view (centre + zoom). Overridable at runtime in admin settings.
+    'map' => [
+        'default_zoom' => (int) env('GEO_MAP_DEFAULT_ZOOM', 12),
+        'pinned_zoom' => (int) env('GEO_MAP_PINNED_ZOOM', 16),
+        'default_lat' => (float) env('GEO_MAP_DEFAULT_LAT', 23.8103),  // Dhaka
+        'default_lng' => (float) env('GEO_MAP_DEFAULT_LNG', 90.4125),
+    ],
+
     // Default radius (metres) for nearby place searches.
     'nearby_radius' => (int) env('GEO_NEARBY_RADIUS', 1500),
 

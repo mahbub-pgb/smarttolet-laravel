@@ -16,7 +16,8 @@
         <nav class="admin-nav">
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Dashboard</a>
             <a href="{{ route('admin.listings.index') }}" class="{{ request()->routeIs('admin.listings.*') ? 'active' : '' }}">🏠 Manage Listings</a>
-            <a href="{{ route('admin.settings.sms') }}" class="{{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">✉️ SMS Settings</a>
+            <a href="{{ route('admin.settings.maps') }}" class="{{ request()->routeIs('admin.settings.maps') ? 'active' : '' }}">🗺️ Map Settings</a>
+            <a href="{{ route('admin.settings.sms') }}" class="{{ request()->routeIs('admin.settings.sms') ? 'active' : '' }}">✉️ SMS Settings</a>
             <div class="admin-nav-sep">Site</div>
             <a href="{{ route('listings.index') }}">🏠 View Listings</a>
             <a href="{{ route('dashboard') }}">👤 My Account</a>

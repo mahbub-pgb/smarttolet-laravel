@@ -86,6 +86,9 @@ Route::middleware(['auth:web', 'web.role:admin,super_admin'])
         Route::post('/listings/{listing}/draft', [AdminListingController::class, 'draft'])->name('listings.draft');
         Route::delete('/listings/{listing}', [AdminListingController::class, 'destroy'])->name('listings.destroy');
 
+        Route::get('/settings/maps', [AdminSettingsController::class, 'maps'])->name('settings.maps');
+        Route::post('/settings/maps', [AdminSettingsController::class, 'updateMaps'])->name('settings.maps.update');
+
         Route::get('/settings/sms', [AdminSettingsController::class, 'sms'])->name('settings.sms');
         Route::post('/settings/sms', [AdminSettingsController::class, 'updateSms'])->name('settings.sms.update');
         Route::post('/settings/sms/test', [AdminSettingsController::class, 'testSms'])->name('settings.sms.test');

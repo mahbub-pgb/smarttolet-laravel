@@ -57,12 +57,18 @@
         return { lat: parseFloat($map.data('lat')), lng: parseFloat($map.data('lng')) };
     }
 
+    // Admin-configured zoom (data-zoom on #map), with a sensible fallback.
+    function mapZoom(fallback) {
+        var v = parseInt($('#map').data('zoom'), 10);
+        return isNaN(v) ? fallback : v;
+    }
+
     // ---- Google Maps + directions (loader ?callback=) ----
     window.initShowMap = function () {
         var $map = $('#map');
         if (!$map.length) return;
         var d = dest();
-        var map = new google.maps.Map($map[0], { center: d, zoom: 15, mapTypeControl: false, streetViewControl: false });
+        var map = new google.maps.Map($map[0], { center: d, zoom: mapZoom(15), mapTypeControl: false, streetViewControl: false });
         var marker = new google.maps.Marker({ map: map, position: d, title: $map.data('title') });
         var info = new google.maps.InfoWindow({ content: String($map.data('title') || '') });
         marker.addListener('click', function () { info.open(map, marker); });
@@ -95,7 +101,7 @@
         if (!$map.length || $map.data('maps') !== 'leaflet') return;
 
         var d = dest();
-        var map = L.map('map').setView([d.lat, d.lng], 15);
+        var map = L.map('map').setView([d.lat, d.lng], mapZoom(15));
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
         L.marker([d.lat, d.lng]).addTo(map).bindPopup(String($map.data('title') || '')).openPopup();
 

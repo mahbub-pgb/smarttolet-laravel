@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Settings\SettingsService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,6 +26,26 @@ class AppServiceProvider extends ServiceProvider
         // Server-rendered web UI pagination uses Bootstrap-style markup,
         // which the public/css/app.css stylesheet themes.
         Paginator::useBootstrapFive();
+
+        $this->shareMapZoom();
+    }
+
+    /**
+     * Share the admin-configured map zoom levels with every view that renders a
+     * map, so the JS can read them off the map element's data attributes.
+     */
+    private function shareMapZoom(): void
+    {
+        View::composer(
+            ['dashboard.form', 'dashboard.profile', 'listings.show', 'listings.map'],
+            function ($view) {
+                $settings = app(SettingsService::class);
+                $view->with('mapDefaultZoom', (int) $settings->get('map_default_zoom', 12));
+                $view->with('mapPinnedZoom', (int) $settings->get('map_pinned_zoom', 16));
+                $view->with('mapDefaultLat', (float) $settings->get('map_default_lat', 23.8103));
+                $view->with('mapDefaultLng', (float) $settings->get('map_default_lng', 90.4125));
+            },
+        );
     }
 
     /**

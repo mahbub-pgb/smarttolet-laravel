@@ -10,6 +10,19 @@
         catch (e) { return []; }
     }
 
+    // Admin-configured zoom levels (data attributes on #map), with fallbacks.
+    function zoom(kind, fallback) {
+        var v = parseInt($('#map').data(kind), 10);
+        return isNaN(v) ? fallback : v;
+    }
+
+    // Admin-configured default map centre (data-lat / data-lng on #map).
+    function center() {
+        var lat = parseFloat($('#map').data('lat'));
+        var lng = parseFloat($('#map').data('lng'));
+        return { lat: isNaN(lat) ? 23.8103 : lat, lng: isNaN(lng) ? 90.4125 : lng };
+    }
+
     function popupHtml(p) {
         var facts = [];
         if (p.bedrooms) facts.push('🛏 ' + p.bedrooms + ' bed');
@@ -31,27 +44,29 @@
     window.initListingsMap = function () {
         var pts = points();
         var map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat: 23.8103, lng: 90.4125 }, // Dhaka
-            zoom: 12,
+            center: center(),
+            zoom: zoom('zoom', 12),
             mapTypeControl: false,
             streetViewControl: false
         });
         var info = new google.maps.InfoWindow();
-        var bounds = new google.maps.LatLngBounds();
 
         $.each(pts, function (_, p) {
             var pos = { lat: p.lat, lng: p.lng };
             var marker = new google.maps.Marker({ position: pos, map: map, title: p.title });
-            bounds.extend(pos);
             marker.addListener('click', function () {
                 info.setContent(popupHtml(p));
                 info.open(map, marker);
             });
         });
 
-        if (pts.length) {
-            map.fitBounds(bounds);
-            if (pts.length === 1) map.setZoom(15);
+        // Honour the admin's default view (centre + zoom). A single pin is
+        // centred on that listing at the closer "pinned" zoom; with several
+        // pins we keep the configured default view rather than auto-fitting,
+        // so the zoom setting actually takes effect.
+        if (pts.length === 1) {
+            map.setCenter({ lat: pts[0].lat, lng: pts[0].lng });
+            map.setZoom(zoom('zoom-pinned', 15));
         }
     };
 
@@ -61,7 +76,8 @@
         if (!$map.length || $map.data('maps') !== 'leaflet') return;
 
         var pts = points();
-        var map = L.map('map');
+        var c = center();
+        var map = L.map('map').setView([c.lat, c.lng], zoom('zoom', 12));
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -70,10 +86,10 @@
             var markers = $.map(pts, function (p) {
                 return L.marker([p.lat, p.lng]).bindPopup(popupHtml(p));
             });
-            var group = L.featureGroup(markers).addTo(map);
-            map.fitBounds(group.getBounds().pad(0.2));
-        } else {
-            map.setView([23.8103, 90.4125], 12);
+            L.featureGroup(markers).addTo(map);
+            // A lone pin gets centred at the closer zoom; otherwise keep the
+            // configured default view so the zoom setting takes effect.
+            if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], zoom('zoom-pinned', 15));
         }
     });
 })(jQuery);

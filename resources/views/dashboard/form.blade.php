@@ -113,7 +113,7 @@
                         <button type="button" class="btn btn-ghost btn-sm" id="use-location">📍 Use current location</button>
                     </div>
 
-                    <div id="pick-map" class="pick-map" data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}" data-lat="{{ $lat }}" data-lng="{{ $lng }}"></div>
+                    <div id="pick-map" class="pick-map" data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}" data-lat="{{ $lat }}" data-lng="{{ $lng }}" data-zoom="{{ $mapDefaultZoom }}" data-zoom-pinned="{{ $mapPinnedZoom }}" data-default-lat="{{ $mapDefaultLat }}" data-default-lng="{{ $mapDefaultLng }}"></div>
 
                     <input type="hidden" name="latitude" id="latitude" value="{{ $lat }}">
                     <input type="hidden" name="longitude" id="longitude" value="{{ $lng }}">
