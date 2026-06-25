@@ -452,6 +452,26 @@ img {
 .pagination .page-item.disabled .page-link {
     color: #cbd5e1;
 }
+.page-jump {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.page-jump-input {
+    width: 72px;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    font-size: 0.88rem;
+    text-align: center;
+}
 
 /* --- Listing detail --- */
 .detail-grid {

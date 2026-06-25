@@ -23,9 +23,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiters();
 
-        // Server-rendered web UI pagination uses Bootstrap-style markup,
-        // which the public/css/app.css stylesheet themes.
-        Paginator::useBootstrapFive();
+        // Server-rendered web UI pagination uses a custom view themed by
+        // public/css/app.css. (The built-in Bootstrap 5 view relies on
+        // Bootstrap utility classes this Tailwind app doesn't ship, which
+        // left two pagination bars rendering on top of each other.)
+        Paginator::defaultView('vendor.pagination.app');
+        Paginator::defaultSimpleView('vendor.pagination.app-simple');
 
         $this->shareMapZoom();
     }

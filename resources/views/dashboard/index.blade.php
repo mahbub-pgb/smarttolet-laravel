@@ -61,7 +61,7 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="pagination">{{ $listings->links() }}</div>
+                <div class="pagination-wrap">{{ $listings->links() }}</div>
             @endif
         </div>
     </section>

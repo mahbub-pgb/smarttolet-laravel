@@ -92,7 +92,7 @@
     </table>
 </section>
 
-<div class="pagination">{{ $listings->links() }}</div>
+<div class="pagination-wrap">{{ $listings->links() }}</div>
 
 {{-- ===== Preview modal ===== --}}
 <div class="modal-overlay" id="preview-modal" aria-hidden="true">
