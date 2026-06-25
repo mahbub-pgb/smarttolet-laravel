@@ -34,8 +34,6 @@
                 {{-- The category select writes the chosen rule into these before submit. --}}
                 <input type="hidden" name="type" id="cat-type" value="{{ request('type') }}">
                 <input type="hidden" name="occupancy" id="cat-occupancy" value="{{ request('occupancy') }}">
-                <input type="hidden" name="lat" id="near-lat" value="{{ request('lat') }}">
-                <input type="hidden" name="lng" id="near-lng" value="{{ request('lng') }}">
 
                 <label class="map-filter-field">
                     Category
@@ -44,15 +42,6 @@
                         @foreach (\App\Models\Listing::NAV_CATEGORIES as $cat)
                             <option value="{{ $cat['param'] }}:{{ $cat['value'] }}"
                                 @selected(request($cat['param']) === $cat['value'])>{{ $cat['icon'] }} {{ $cat['label'] }}</option>
-                        @endforeach
-                    </select>
-                </label>
-
-                <label class="map-filter-field">
-                    Distance
-                    <select name="radius" id="near-radius">
-                        @foreach ([1 => 'Near me', 2 => '2 km', 5 => '5 km', 10 => '10 km'] as $km => $label)
-                            <option value="{{ $km }}" @selected((string) request('radius', 1) === (string) $km)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -90,7 +79,6 @@
                     Sort
                     <select name="sort">
                         <option value="">Default</option>
-                        <option value="nearest" @selected(request('sort') === 'nearest')>Nearest</option>
                         <option value="price_asc" @selected(request('sort') === 'price_asc')>Price: low to high</option>
                         <option value="price_desc" @selected(request('sort') === 'price_desc')>Price: high to low</option>
                         <option value="popular" @selected(request('sort') === 'popular')>Most viewed</option>
@@ -99,7 +87,7 @@
 
                 <div class="map-filter-actions">
                     <button type="submit" class="btn btn-sm">Apply</button>
-                    @if (request()->hasAny(['type', 'occupancy', 'q', 'area', 'lat', 'lng', 'min_rent', 'max_rent', 'bedrooms', 'sort', 'radius']))
+                    @if (request()->hasAny(['type', 'occupancy', 'q', 'area', 'min_rent', 'max_rent', 'bedrooms', 'sort']))
                         <a href="{{ route('listings.map') }}" class="btn btn-ghost btn-sm" id="map-reset">
                             <span class="map-filter-actions-icon" aria-hidden="true">✕</span> Clear all
                         </a>
@@ -112,8 +100,7 @@
                  data-zoom="{{ $mapDefaultZoom }}"
                  data-zoom-pinned="{{ $mapPinnedZoom }}"
                  data-lat="{{ $mapDefaultLat }}"
-                 data-lng="{{ $mapDefaultLng }}"
-                 @if ($origin) data-origin-lat="{{ $origin['lat'] }}" data-origin-lng="{{ $origin['lng'] }}" @endif></div>
+                 data-lng="{{ $mapDefaultLng }}"></div>
         </div>
     </section>
 

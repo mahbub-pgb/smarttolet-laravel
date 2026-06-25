@@ -75,11 +75,6 @@ class ListingController extends Controller
         $rentCeiling = (int) Listing::query()->publiclyVisible()->max('rent');
         $rentCeiling = max((int) (ceil($rentCeiling / 1000) * 1000), 1000);
 
-        // The pin the "Near me" search was centred on (so the JS can mark it).
-        $origin = $request->filled('lat') && $request->filled('lng')
-            ? ['lat' => (float) $request->input('lat'), 'lng' => (float) $request->input('lng')]
-            : null;
-
         $points = $listings->map(fn (Listing $l) => [
             'id' => $l->id,
             'slug' => $l->slug,
@@ -96,7 +91,7 @@ class ListingController extends Controller
             'image' => $l->images[0]['url'] ?? null,
         ])->values();
 
-        return view('listings.map', compact('listings', 'points', 'types', 'origin', 'rentCeiling'));
+        return view('listings.map', compact('listings', 'points', 'types', 'rentCeiling'));
     }
 
     /**
@@ -118,15 +113,6 @@ class ListingController extends Controller
         foreach (['min_rent', 'max_rent', 'bedrooms', 'bathrooms'] as $key) {
             if ($request->filled($key)) {
                 $filters[$key] = $request->integer($key);
-            }
-        }
-
-        // Geo radius search (set by the map's "Near me" control).
-        if ($request->filled('lat') && $request->filled('lng')) {
-            $filters['lat'] = (float) $request->input('lat');
-            $filters['lng'] = (float) $request->input('lng');
-            if ($request->filled('radius')) {
-                $filters['radius'] = (float) $request->input('radius');
             }
         }
 
