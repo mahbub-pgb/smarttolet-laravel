@@ -41,12 +41,34 @@ class ListingController extends Controller
         return view('admin.listings.index', compact('listings', 'counts', 'status'));
     }
 
+    /** GET /admin/listings/{listing}/preview — HTML fragment for the modal. */
+    public function preview(Listing $listing): View
+    {
+        $listing->loadMissing('owner:id,name,mobile,photo');
+
+        return view('admin.listings._preview', compact('listing'));
+    }
+
     /** POST /admin/listings/{listing}/approve */
     public function approve(Listing $listing): RedirectResponse
     {
         $this->listings->moderate($listing, 'approve');
 
         return back()->with('status', "“{$listing->title}” approved and published.");
+    }
+
+    /** POST /admin/listings/{listing}/reject — reject with a message to the owner. */
+    public function reject(Request $request, Listing $listing): RedirectResponse
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:1000'],
+        ], [
+            'reason.required' => 'Please write a short reason so the owner knows what to fix.',
+        ]);
+
+        $this->listings->moderate($listing, 'reject', $data['reason']);
+
+        return back()->with('status', "“{$listing->title}” rejected. The owner has been notified.");
     }
 
     /** POST /admin/listings/{listing}/draft — unpublish back to draft. */

@@ -3,11 +3,13 @@
 use App\Exceptions\ApiException;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureMaintenanceModeAllows;
+use App\Http\Middleware\EnsureWebRole;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequireRole;
+use App\Http\Middleware\SecurityHeaders;
 use App\Support\ApiResponse;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -39,13 +41,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt.auth' => Authenticate::class,
             'permission' => RequirePermission::class,
             'role' => RequireRole::class,
-            'web.role' => \App\Http\Middleware\EnsureWebRole::class,
+            'web.role' => EnsureWebRole::class,
             'maintenance.gate' => EnsureMaintenanceModeAllows::class,
         ]);
 
         // Security headers + global Redis-backed throttle on the API group.
         $middleware->appendToGroup('api', [
-            \App\Http\Middleware\SecurityHeaders::class,
+            SecurityHeaders::class,
             'throttle:api',
         ]);
     })
@@ -57,13 +59,19 @@ return Application::configure(basePath: dirname(__DIR__))
             return $e->render();
         });
 
-        $exceptions->render(function (ValidationException $e) {
-            return ApiResponse::error(
-                message: 'The given data was invalid.',
-                status: 422,
-                code: 'validation_failed',
-                details: $e->errors(),
-            );
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            // API clients get the JSON envelope; web forms fall through to the
+            // framework default (redirect back with errors flashed to session).
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return ApiResponse::error(
+                    message: 'The given data was invalid.',
+                    status: 422,
+                    code: 'validation_failed',
+                    details: $e->errors(),
+                );
+            }
+
+            return null;
         });
 
         $exceptions->render(function (AuthenticationException $e, Request $request) {

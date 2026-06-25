@@ -39,13 +39,23 @@
                         <td><span class="pill pill-{{ $listing->status }}">{{ ucfirst($listing->status) }}</span></td>
                         <td>
                             <div class="row-actions">
-                                <a href="{{ route('listings.show', $listing->slug) }}" target="_blank" class="btn btn-ghost btn-sm">Preview</a>
-
-                                @if ($listing->status !== \App\Models\Listing::STATUS_APPROVED)
+                                @if ($listing->status === \App\Models\Listing::STATUS_APPROVED)
+                                    {{-- Approved listings open the live public page. --}}
+                                    <a href="{{ route('listings.show', $listing->slug) }}" target="_blank" class="btn btn-ghost btn-sm">View ↗</a>
+                                @else
+                                    {{-- Non-approved listings preview in a modal for review. --}}
+                                    <button type="button" class="btn btn-ghost btn-sm preview-btn"
+                                            data-url="{{ route('admin.listings.preview', $listing) }}">Preview</button>
                                     <form method="POST" action="{{ route('admin.listings.approve', $listing) }}">
                                         @csrf
                                         <button class="btn btn-sm" type="submit">Approve</button>
                                     </form>
+                                @endif
+
+                                @if ($listing->status !== \App\Models\Listing::STATUS_REJECTED)
+                                    <button type="button" class="btn btn-ghost btn-sm reject-btn"
+                                            data-url="{{ route('admin.listings.reject', $listing) }}"
+                                            data-title="{{ $listing->title }}">Reject</button>
                                 @endif
 
                                 @if ($listing->status !== \App\Models\Listing::STATUS_DRAFT)
@@ -72,4 +82,84 @@
     </section>
 
     <div class="pagination">{{ $listings->links() }}</div>
+
+    {{-- ===== Preview modal ===== --}}
+    <div class="modal-overlay" id="preview-modal" aria-hidden="true">
+        <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Listing preview">
+            <div class="modal-head">
+                <h3>Listing preview</h3>
+                <button type="button" class="modal-close" id="preview-close" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body" id="preview-body">
+                <p class="muted">Loading…</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== Reject (with message) modal ===== --}}
+    <div class="modal-overlay" id="reject-modal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Reject listing">
+            <div class="modal-head">
+                <h3>Reject listing</h3>
+                <button type="button" class="modal-close" id="reject-close" aria-label="Close">✕</button>
+            </div>
+            <form method="POST" id="reject-form">
+                @csrf
+                <div class="modal-body">
+                    <p class="form-hint" id="reject-target">Tell the owner why this listing was rejected. They will see this message.</p>
+                    <textarea name="reason" rows="4" maxlength="1000" required
+                              placeholder="e.g. The photos don't match the description. Please re-upload clear photos of the actual property."></textarea>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn btn-ghost" id="reject-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject &amp; notify owner</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            // ---- Preview modal ----
+            const pModal = document.getElementById('preview-modal');
+            const pBody = document.getElementById('preview-body');
+            const openP = () => { pModal.classList.add('open'); pModal.setAttribute('aria-hidden', 'false'); };
+            const closeP = () => { pModal.classList.remove('open'); pModal.setAttribute('aria-hidden', 'true'); };
+
+            document.querySelectorAll('.preview-btn').forEach(btn => btn.addEventListener('click', () => {
+                pBody.innerHTML = '<p class="muted">Loading…</p>';
+                openP();
+                fetch(btn.dataset.url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+                    .then(r => r.ok ? r.text() : Promise.reject(r.status))
+                    .then(html => { pBody.innerHTML = html; })
+                    .catch(() => { pBody.innerHTML = '<p class="alert alert-error">Could not load the preview.</p>'; });
+            }));
+            document.getElementById('preview-close').addEventListener('click', closeP);
+            pModal.addEventListener('click', e => { if (e.target === pModal) closeP(); });
+
+            // ---- Reject modal ----
+            const rModal = document.getElementById('reject-modal');
+            const rForm = document.getElementById('reject-form');
+            const rTarget = document.getElementById('reject-target');
+            const openR = () => { rModal.classList.add('open'); rModal.setAttribute('aria-hidden', 'false'); };
+            const closeR = () => { rModal.classList.remove('open'); rModal.setAttribute('aria-hidden', 'true'); };
+
+            // Buttons on the table rows, plus any inside the fetched preview fragment.
+            document.addEventListener('click', e => {
+                const btn = e.target.closest('.reject-btn');
+                if (!btn) return;
+                rForm.action = btn.dataset.url;
+                if (btn.dataset.title) rTarget.textContent = `Why is “${btn.dataset.title}” being rejected? The owner will see this message.`;
+                rForm.reason.value = '';
+                closeP();
+                openR();
+                setTimeout(() => rForm.reason.focus(), 50);
+            });
+            document.getElementById('reject-close').addEventListener('click', closeR);
+            document.getElementById('reject-cancel').addEventListener('click', closeR);
+            rModal.addEventListener('click', e => { if (e.target === rModal) closeR(); });
+
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeP(); closeR(); } });
+        })();
+    </script>
 @endsection

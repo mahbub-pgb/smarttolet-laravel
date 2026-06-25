@@ -22,6 +22,13 @@
                 <a href="{{ route('dashboard') }}" class="btn btn-ghost btn-sm">← Back</a>
             </div>
 
+            @if ($isEdit && $listing->status === \App\Models\Listing::STATUS_REJECTED && $listing->rejection_reason)
+                <div class="alert alert-warning">
+                    <strong>This listing was rejected.</strong> {{ $listing->rejection_reason }}
+                    <br><small>Make the changes below and submit again for review.</small>
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="alert alert-error">
                     <strong>Please fix the following:</strong>

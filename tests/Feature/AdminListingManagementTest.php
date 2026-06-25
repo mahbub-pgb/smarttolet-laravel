@@ -52,6 +52,44 @@ class AdminListingManagementTest extends TestCase
         $this->assertSame(1, Listing::query()->publiclyVisible()->whereKey($listing->id)->count());
     }
 
+    public function test_admin_can_reject_a_listing_with_a_message(): void
+    {
+        $listing = Listing::factory()->pending()->create();
+
+        $this->actingAs($this->admin(), 'web')
+            ->post(route('admin.listings.reject', $listing), ['reason' => 'Photos do not match the property.'])
+            ->assertRedirect();
+
+        $fresh = $listing->fresh();
+        $this->assertSame(Listing::STATUS_REJECTED, $fresh->status);
+        $this->assertSame('Photos do not match the property.', $fresh->rejection_reason);
+    }
+
+    public function test_rejection_requires_a_message(): void
+    {
+        $listing = Listing::factory()->pending()->create();
+
+        $this->actingAs($this->admin(), 'web')
+            ->post(route('admin.listings.reject', $listing), ['reason' => ''])
+            ->assertSessionHasErrors('reason');
+
+        $this->assertSame(Listing::STATUS_PENDING, $listing->fresh()->status);
+    }
+
+    public function test_owner_sees_the_rejection_message_on_their_dashboard(): void
+    {
+        $user = User::factory()->create();
+        Listing::factory()->ownedBy($user)->create([
+            'status' => Listing::STATUS_REJECTED,
+            'rejection_reason' => 'Please add a valid address.',
+        ]);
+
+        $this->actingAs($user, 'web')
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Please add a valid address.');
+    }
+
     public function test_admin_can_move_a_listing_to_draft(): void
     {
         $listing = Listing::factory()->create(['status' => Listing::STATUS_APPROVED]);
@@ -136,6 +174,31 @@ class AdminListingManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Hidden pending flat')
             ->assertSee('Preview');
+    }
+
+    public function test_admin_preview_fragment_renders_listing_details(): void
+    {
+        $listing = Listing::factory()->pending()->create([
+            'title' => 'Pending modal preview',
+            'description' => 'Details shown inside the admin modal.',
+        ]);
+
+        $this->actingAs($this->admin(), 'web')
+            ->get(route('admin.listings.preview', $listing))
+            ->assertOk()
+            ->assertSee('Pending modal preview')
+            ->assertSee('Approve &amp; publish', false)
+            ->assertDontSee('<!DOCTYPE', false); // fragment only, no layout
+    }
+
+    public function test_non_admin_cannot_load_preview_fragment(): void
+    {
+        $listing = Listing::factory()->pending()->create();
+        $user = User::factory()->create(['role' => Role::User->value]);
+
+        $this->actingAs($user, 'web')
+            ->get(route('admin.listings.preview', $listing))
+            ->assertForbidden();
     }
 
     public function test_guest_cannot_view_a_pending_listing(): void

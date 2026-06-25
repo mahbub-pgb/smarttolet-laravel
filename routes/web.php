@@ -80,7 +80,9 @@ Route::middleware(['auth:web', 'web.role:admin,super_admin'])
 
         // Manage all user listings: approve / unpublish to draft / delete.
         Route::get('/listings', [AdminListingController::class, 'index'])->name('listings.index');
+        Route::get('/listings/{listing}/preview', [AdminListingController::class, 'preview'])->name('listings.preview');
         Route::post('/listings/{listing}/approve', [AdminListingController::class, 'approve'])->name('listings.approve');
+        Route::post('/listings/{listing}/reject', [AdminListingController::class, 'reject'])->name('listings.reject');
         Route::post('/listings/{listing}/draft', [AdminListingController::class, 'draft'])->name('listings.draft');
         Route::delete('/listings/{listing}', [AdminListingController::class, 'destroy'])->name('listings.destroy');
 
