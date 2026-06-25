@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 
 class ListingController extends Controller
 {
+    /** Upper bound on markers plotted on the map (clustered client-side). */
+    private const MAP_MARKER_CAP = 10000;
+
     public function __construct(private ListingService $listings) {}
 
     /** GET /listings — browse / search all approved listings. */
@@ -61,10 +64,11 @@ class ListingController extends Controller
     /** GET /map — geocoded listings plotted on a map, optionally near the user. */
     public function map(Request $request): View
     {
-        // Reuse the public search (keyword, category, geo radius, sorting) and
-        // keep only the geocoded rows the map can actually plot.
+        // Reuse the public search (keyword, category, sorting) and keep only the
+        // geocoded rows the map can plot. The map clusters markers, so we plot
+        // every match up to a generous safety cap (rather than the old 500).
         $listings = $this->listings
-            ->search($this->filters($request), 500, 1)
+            ->search($this->filters($request), self::MAP_MARKER_CAP, 1)
             ->getCollection()
             ->filter(fn (Listing $l) => $l->latitude !== null && $l->longitude !== null)
             ->values();

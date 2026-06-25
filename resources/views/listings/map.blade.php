@@ -7,6 +7,8 @@
 @push('head')
     @unless ($mapsKey)
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     @endunless
 @endpush
 
@@ -18,7 +20,10 @@
                     <h2>Explore on the map</h2>
                     <p>{{ $listings->count() }} {{ \Illuminate\Support\Str::plural('listing', $listings->count()) }} plotted. Click a pin for details.</p>
                 </div>
-                <a href="{{ route('listings.index', request()->except('page')) }}" class="btn btn-ghost btn-sm">☰ List view</a>
+                <div class="section-head-actions">
+                    <button type="button" id="near-me" class="btn btn-sm">📍 Near me</button>
+                    <a href="{{ route('listings.index', request()->except('page')) }}" class="btn btn-ghost btn-sm">☰ List view</a>
+                </div>
             </div>
 
             {{-- Category + distance + sort controls, all on one line. The category
@@ -111,6 +116,9 @@
 @push('scripts')
     @unless ($mapsKey)
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    @else
+        <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
     @endunless
     <script src="{{ asset('js/listing-map.js') }}"></script>
     @if ($mapsKey)

@@ -2,6 +2,12 @@
 (function ($) {
     'use strict';
 
+    // Set once the map is built (Google or Leaflet). The "Near me" button uses
+    // it to drop a "you are here" marker and pan to the user's location, which
+    // brings the nearby listing clusters into view.
+    var mapApi = null;
+    var userMarker = null;
+
     function fmt(n) { return Number(n).toLocaleString(); }
 
     function points() {
@@ -51,14 +57,40 @@
         });
         var info = new google.maps.InfoWindow();
 
-        $.each(pts, function (_, p) {
-            var pos = { lat: p.lat, lng: p.lng };
-            var marker = new google.maps.Marker({ position: pos, map: map, title: p.title });
+        // Build all markers first. With thousands of listings we group them
+        // with MarkerClusterer (when its library is present) so the map stays
+        // responsive; otherwise we fall back to dropping every marker directly.
+        var markers = $.map(pts, function (p) {
+            var marker = new google.maps.Marker({ position: { lat: p.lat, lng: p.lng }, title: p.title });
             marker.addListener('click', function () {
                 info.setContent(popupHtml(p));
                 info.open(map, marker);
             });
+            return marker;
         });
+
+        if (window.markerClusterer && markers.length) {
+            new markerClusterer.MarkerClusterer({ map: map, markers: markers });
+        } else {
+            $.each(markers, function (_, m) { m.setMap(map); });
+        }
+
+        // Expose pan + user-marker hooks for the "Near me" button.
+        mapApi = {
+            focus: function (lat, lng) {
+                map.setCenter({ lat: lat, lng: lng });
+                map.setZoom(zoom('zoom-pinned', 14));
+            },
+            markUser: function (lat, lng) {
+                if (userMarker) userMarker.setMap(null);
+                userMarker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    title: 'You are here',
+                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 }
+                });
+            }
+        };
 
         // Honour the admin's default view (centre + zoom). A single pin is
         // centred on that listing at the closer "pinned" zoom; with several
@@ -83,14 +115,30 @@
         }).addTo(map);
 
         if (pts.length) {
-            var markers = $.map(pts, function (p) {
-                return L.marker([p.lat, p.lng]).bindPopup(popupHtml(p));
+            // Cluster markers when the markercluster plugin is loaded, so a
+            // dense map (thousands of pins) stays usable; otherwise plain group.
+            var group = (typeof L.markerClusterGroup === 'function')
+                ? L.markerClusterGroup()
+                : L.featureGroup();
+            $.each(pts, function (_, p) {
+                group.addLayer(L.marker([p.lat, p.lng]).bindPopup(popupHtml(p)));
             });
-            L.featureGroup(markers).addTo(map);
+            group.addTo(map);
             // A lone pin gets centred at the closer zoom; otherwise keep the
             // configured default view so the zoom setting takes effect.
             if (pts.length === 1) map.setView([pts[0].lat, pts[0].lng], zoom('zoom-pinned', 15));
         }
+
+        // Expose pan + user-marker hooks for the "Near me" button.
+        mapApi = {
+            focus: function (lat, lng) { map.setView([lat, lng], zoom('zoom-pinned', 14)); },
+            markUser: function (lat, lng) {
+                if (userMarker) map.removeLayer(userMarker);
+                userMarker = L.circleMarker([lat, lng], {
+                    radius: 8, color: '#fff', weight: 2, fillColor: '#2563eb', fillOpacity: 1
+                }).addTo(map).bindPopup('You are here');
+            }
+        };
     });
 
     // Category dropdown: each option is "param:value" (type or occupancy).
@@ -151,5 +199,40 @@
         $min.on('input', function () { refresh('min'); });
         $max.on('input', function () { refresh('max'); });
         refresh();
+    });
+
+    // "Near me" button: ask the browser for the user's location, mark it on the
+    // map and pan there so the nearby listing clusters come into view. All
+    // listings are already plotted, so this is purely a client-side focus.
+    $(function () {
+        var $btn = $('#near-me');
+        if (!$btn.length) return;
+
+        $btn.on('click', function () {
+            if (!navigator.geolocation) {
+                window.alert('Location is not supported by your browser.');
+                return;
+            }
+
+            var original = $btn.html();
+            $btn.prop('disabled', true).text('📍 Locating…');
+
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    var lat = pos.coords.latitude;
+                    var lng = pos.coords.longitude;
+                    if (mapApi) {
+                        mapApi.markUser(lat, lng);
+                        mapApi.focus(lat, lng);
+                    }
+                    $btn.prop('disabled', false).html(original);
+                },
+                function () {
+                    $btn.prop('disabled', false).html(original);
+                    window.alert('Could not get your location. Please allow location access and try again.');
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        });
     });
 })(jQuery);

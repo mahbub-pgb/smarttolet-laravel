@@ -262,6 +262,12 @@ img {
     margin: 4px 0 0;
     color: var(--muted);
 }
+.section-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
 
 /* --- Listing grid + cards --- */
 .grid {
