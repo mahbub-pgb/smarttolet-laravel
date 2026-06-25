@@ -268,6 +268,31 @@ img {
     gap: 8px;
     flex-shrink: 0;
 }
+.near-me-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+}
+.near-me-toggle:has(input:checked) {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: color-mix(in srgb, var(--brand) 8%, var(--card));
+}
+.near-me-toggle input {
+    accent-color: var(--brand);
+    cursor: pointer;
+    margin: 0;
+}
 
 /* --- Listing grid + cards --- */
 .grid {

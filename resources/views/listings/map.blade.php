@@ -21,7 +21,9 @@
                     <p>{{ $listings->count() }} {{ \Illuminate\Support\Str::plural('listing', $listings->count()) }} plotted. Click a pin for details.</p>
                 </div>
                 <div class="section-head-actions">
-                    <button type="button" id="near-me" class="btn btn-sm">📍 Near me</button>
+                    <label class="near-me-toggle" for="near-me">
+                        <input type="checkbox" id="near-me"> 📍 Near me
+                    </label>
                     <a href="{{ route('listings.index', request()->except('page')) }}" class="btn btn-ghost btn-sm">☰ List view</a>
                 </div>
             </div>

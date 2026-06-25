@@ -46,6 +46,40 @@
             '</div></div>';
     }
 
+    // --- "Near me" persistence (cookie) ---------------------------------
+    // Remember the user's location and that "Near me" is on, so the state
+    // survives reloads (including Apply and Clear all) without re-prompting.
+    var NEAR_COOKIE = 'st_nearme';
+    var NEAR_DAYS = 30;
+
+    function writeNearCookie(lat, lng) {
+        document.cookie = NEAR_COOKIE + '=' + encodeURIComponent(lat + ',' + lng) +
+            '; max-age=' + (NEAR_DAYS * 24 * 60 * 60) + '; path=/; SameSite=Lax';
+    }
+
+    function clearNearCookie() {
+        document.cookie = NEAR_COOKIE + '=; max-age=0; path=/; SameSite=Lax';
+    }
+
+    // The remembered { lat, lng } when "Near me" is active, or null.
+    function readNearCookie() {
+        var m = document.cookie.match(new RegExp('(?:^|; )' + NEAR_COOKIE + '=([^;]*)'));
+        if (!m) return null;
+        var p = decodeURIComponent(m[1]).split(',');
+        var lat = parseFloat(p[0]);
+        var lng = parseFloat(p[1]);
+        return (isNaN(lat) || isNaN(lng)) ? null : { lat: lat, lng: lng };
+    }
+
+    // Re-apply a stored "Near me" focus once the map (mapApi) is ready.
+    function applyStoredNearMe() {
+        var geo = readNearCookie();
+        if (geo && mapApi) {
+            mapApi.markUser(geo.lat, geo.lng);
+            mapApi.focus(geo.lat, geo.lng);
+        }
+    }
+
     // Google Maps entry point (referenced by the loader's ?callback=).
     window.initListingsMap = function () {
         var pts = points();
@@ -89,8 +123,15 @@
                     title: 'You are here',
                     icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 }
                 });
+            },
+            reset: function () {
+                if (userMarker) { userMarker.setMap(null); userMarker = null; }
+                map.setCenter(center());
+                map.setZoom(zoom('zoom', 12));
             }
         };
+
+        applyStoredNearMe();
 
         // Honour the admin's default view (centre + zoom). A single pin is
         // centred on that listing at the closer "pinned" zoom; with several
@@ -137,8 +178,15 @@
                 userMarker = L.circleMarker([lat, lng], {
                     radius: 8, color: '#fff', weight: 2, fillColor: '#2563eb', fillOpacity: 1
                 }).addTo(map).bindPopup('You are here');
+            },
+            reset: function () {
+                if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+                var c = center();
+                map.setView([c.lat, c.lng], zoom('zoom', 12));
             }
         };
+
+        applyStoredNearMe();
     });
 
     // Category dropdown: each option is "param:value" (type or occupancy).
@@ -201,34 +249,46 @@
         refresh();
     });
 
-    // "Near me" button: ask the browser for the user's location, mark it on the
-    // map and pan there so the nearby listing clusters come into view. All
+    // "Near me" checkbox: when checked, ask the browser for the user's location,
+    // mark it on the map and pan there so the nearby listing clusters come into
+    // view. Unchecking resets the map to the default view (all listings). All
     // listings are already plotted, so this is purely a client-side focus.
     $(function () {
-        var $btn = $('#near-me');
-        if (!$btn.length) return;
+        var $chk = $('#near-me');
+        if (!$chk.length) return;
 
-        $btn.on('click', function () {
-            if (!navigator.geolocation) {
-                window.alert('Location is not supported by your browser.');
+        // Restore the checkbox state from a previous "Near me" session. The map
+        // itself is re-focused by applyStoredNearMe() once mapApi is ready.
+        if (readNearCookie()) $chk.prop('checked', true);
+
+        $chk.on('change', function () {
+            if (!this.checked) {
+                clearNearCookie();
+                if (mapApi) mapApi.reset();
                 return;
             }
 
-            var original = $btn.html();
-            $btn.prop('disabled', true).text('📍 Locating…');
+            if (!navigator.geolocation) {
+                window.alert('Location is not supported by your browser.');
+                $chk.prop('checked', false);
+                return;
+            }
+
+            $chk.prop('disabled', true);
 
             navigator.geolocation.getCurrentPosition(
                 function (pos) {
                     var lat = pos.coords.latitude;
                     var lng = pos.coords.longitude;
+                    writeNearCookie(lat, lng);
                     if (mapApi) {
                         mapApi.markUser(lat, lng);
                         mapApi.focus(lat, lng);
                     }
-                    $btn.prop('disabled', false).html(original);
+                    $chk.prop('disabled', false);
                 },
                 function () {
-                    $btn.prop('disabled', false).html(original);
+                    $chk.prop('disabled', false).prop('checked', false);
                     window.alert('Could not get your location. Please allow location access and try again.');
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
