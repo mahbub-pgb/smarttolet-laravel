@@ -157,23 +157,20 @@
     }
 
     // Category dropdown: each option is "param:value" (type or occupancy).
-    // Split the selection into the hidden type/occupancy inputs before the
-    // filter form submits, then reload so the server filters by category.
+    // Split the selection into the hidden type/occupancy inputs when the filter
+    // form is submitted (via Apply), so it applies alongside the other filters.
     $(function () {
         var $form = $('#map-filters');
         var $cat = $('#category-select');
         if (!$form.length || !$cat.length) return;
 
-        function syncCategory() {
+        $form.on('submit', function () {
             var parts = ($cat.val() || '').split(':');
             var param = parts[0];
             var value = parts.length > 1 ? parts[1] : '';
             $('#cat-type').val(param === 'type' ? value : '');
             $('#cat-occupancy').val(param === 'occupancy' ? value : '');
-        }
-
-        $form.on('submit', syncCategory);
-        $cat.on('change', function () { $form.trigger('submit'); });
+        });
     });
 
     // "Near me" button: reuse the remembered location when we have one (no

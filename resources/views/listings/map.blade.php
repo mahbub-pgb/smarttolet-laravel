@@ -86,8 +86,8 @@
                 </label>
 
                 <button type="submit" class="btn btn-sm">Apply</button>
-                @if (request()->hasAny(['lat', 'lng', 'min_rent', 'max_rent', 'bedrooms', 'sort', 'radius']))
-                    <a href="{{ route('listings.map', request()->only(['type', 'occupancy'])) }}" class="btn btn-ghost btn-sm" id="map-reset">Reset</a>
+                @if (request()->hasAny(['type', 'occupancy', 'q', 'area', 'lat', 'lng', 'min_rent', 'max_rent', 'bedrooms', 'sort', 'radius']))
+                    <a href="{{ route('listings.map') }}" class="btn btn-ghost btn-sm" id="map-reset">Clear all</a>
                 @endif
             </form>
 
