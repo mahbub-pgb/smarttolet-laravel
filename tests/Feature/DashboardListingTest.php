@@ -151,6 +151,30 @@ class DashboardListingTest extends TestCase
         $this->assertSame(Listing::STATUS_PENDING, $listing->fresh()->status);
     }
 
+    public function test_first_listing_backfills_an_empty_owner_location(): void
+    {
+        $user = User::factory()->create(['latitude' => null, 'longitude' => null]);
+
+        $this->actingAs($user, 'web')
+            ->post(route('dashboard.listings.store'), $this->validListingPayload(['as_draft' => 0]));
+
+        $user->refresh();
+        $this->assertEqualsWithDelta(23.7461, (float) $user->latitude, 0.0001);
+        $this->assertEqualsWithDelta(90.3742, (float) $user->longitude, 0.0001);
+    }
+
+    public function test_listing_does_not_overwrite_an_existing_owner_location(): void
+    {
+        $user = User::factory()->create(['latitude' => 11.1111, 'longitude' => 22.2222]);
+
+        $this->actingAs($user, 'web')
+            ->post(route('dashboard.listings.store'), $this->validListingPayload(['as_draft' => 0]));
+
+        $user->refresh();
+        $this->assertEqualsWithDelta(11.1111, (float) $user->latitude, 0.0001);
+        $this->assertEqualsWithDelta(22.2222, (float) $user->longitude, 0.0001);
+    }
+
     public function test_user_can_update_their_profile(): void
     {
         $user = User::factory()->create(['name' => 'Old Name']);

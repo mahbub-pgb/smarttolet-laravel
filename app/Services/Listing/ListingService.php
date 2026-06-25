@@ -128,8 +128,30 @@ class ListingService
         ]);
 
         $this->syncGeoPoint($listing);
+        $this->backfillOwnerLocation($user, $data['latitude'] ?? null, $data['longitude'] ?? null);
 
         return $listing;
+    }
+
+    /**
+     * Seed the owner's profile location from a listing's pin the first time they
+     * post one — so the next listing's map can default to it. Never overwrites a
+     * location the user has already set.
+     */
+    private function backfillOwnerLocation(User $user, mixed $lat, mixed $lng): void
+    {
+        if ($lat === null || $lng === null) {
+            return;
+        }
+
+        if ($user->latitude !== null && $user->longitude !== null) {
+            return;
+        }
+
+        $user->forceFill([
+            'latitude' => (float) $lat,
+            'longitude' => (float) $lng,
+        ])->save();
     }
 
     /** Admins and super admins publish their own listings without review. */

@@ -5,8 +5,11 @@
 @php
     $selectedAmenities = old('amenities', $listing->amenities ?? []);
     $selectedRules = old('occupancy_rules', $listing->occupancy_rules ?? []);
-    $lat = old('latitude', $listing->latitude);
-    $lng = old('longitude', $listing->longitude);
+    // New listings default their pin to the owner's saved profile location (if
+    // any) so they don't have to re-pick it every time.
+    $prefillFromProfile = ! $isEdit && $listing->latitude === null && $user->latitude !== null;
+    $lat = old('latitude', $listing->latitude ?? (! $isEdit ? $user->latitude : null));
+    $lng = old('longitude', $listing->longitude ?? (! $isEdit ? $user->longitude : null));
     $mapsKey = config('geo.google.browser_key');
     $existingImages = $isEdit ? collect($listing->images ?? [])->pluck('url')->all() : [];
 @endphp
@@ -101,6 +104,9 @@
                 <fieldset class="form-card">
                     <legend>Location</legend>
                     <p class="form-hint">Search, use your current location, or click the map to drop a pin. The address and area fill in automatically.</p>
+                    @if ($prefillFromProfile)
+                        <p class="form-hint" style="color:var(--brand)">📍 Starting from your saved profile location — move the pin if this listing is elsewhere.</p>
+                    @endif
 
                     <div class="map-toolbar">
                         <input type="text" id="map-search" placeholder="🔍 Search for a place or address…" autocomplete="off">
