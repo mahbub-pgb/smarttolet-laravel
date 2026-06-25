@@ -1705,6 +1705,7 @@ code {
 /* Map marker info-window card (Google Maps + Leaflet) */
 .map-pop {
     width: 220px;
+    max-width: 80vw;
     font-family: inherit;
 }
 .map-pop img {
@@ -1748,15 +1749,42 @@ code {
     font-weight: 600;
     font-size: 0.85rem;
 }
-/* Tighten Google InfoWindow default padding around our card */
+/* Tighten Google InfoWindow default padding around our card.
+   Don't clip with overflow:hidden — Google measures the window before the
+   image loads, so a fixed clip cuts off the bottom of the card. Let it size
+   to the content instead. */
 .gm-style-iw-d {
-    overflow: hidden !important;
+    overflow: visible !important;
+    max-width: none !important;
+    max-height: none !important;
 }
 .gm-style .gm-style-iw-c {
     padding: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border-radius: 10px;
 }
 .gm-style .gm-style-iw-c .map-pop {
     width: 220px;
+}
+/* Keep the close (X) button clear of the card image. */
+.gm-style .gm-ui-hover-effect {
+    top: 2px !important;
+    right: 2px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-radius: 50% !important;
+}
+
+/* Leaflet popup: strip default padding/margins so our card fills it cleanly. */
+.leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 10px;
+}
+.leaflet-popup-content {
+    margin: 0;
+    width: 220px !important;
 }
 
 /* Lightbox prev/next navigation arrows */
