@@ -2241,3 +2241,52 @@ code {
 #ml-upload-status {
     margin-top: 12px;
 }
+
+/* Render CKEditor-authored image sizing/alignment on the public post page
+   (the editor's own content CSS isn't loaded there). */
+.prose figure.image {
+    display: table;
+    margin: 1.2em auto;
+    max-width: 100%;
+}
+.prose figure.image img {
+    display: block;
+    width: 100%;
+}
+.prose figure.image figcaption {
+    display: table-caption;
+    caption-side: bottom;
+    padding: 6px 4px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: center;
+}
+.prose .image_resized {
+    max-width: 100%;
+}
+.prose .image_resized img {
+    width: 100%;
+}
+.prose .image-style-align-left,
+.prose .image-style-block-align-left {
+    float: left;
+    margin: 0.4em 1.2em 1.2em 0;
+}
+.prose .image-style-align-right,
+.prose .image-style-block-align-right {
+    float: right;
+    margin: 0.4em 0 1.2em 1.2em;
+}
+.prose .image-style-align-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+.prose .image-style-side {
+    float: right;
+    margin: 0.4em 0 1.2em 1.2em;
+    max-width: 50%;
+}
+.prose .image-inline {
+    display: inline-flex;
+    max-width: 100%;
+}

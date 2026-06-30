@@ -7,6 +7,23 @@
 (function ($) {
     'use strict';
 
+    // Premium / collaboration plugins bundled in the super-build that need a
+    // license key or token. Verified present in this build — leaving any of
+    // them in (e.g. AIAssistant) makes create() reject and the editor vanish.
+    // CloudServices is intentionally NOT removed: it's a shared dependency and
+    // orphaning it breaks init.
+    var REMOVE = [
+        'AIAssistant',
+        'CKBox', 'CKFinder', 'EasyImage',
+        'ExportPdf', 'ExportWord',
+        'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges',
+        'RealTimeCollaborativeRevisionHistory', 'PresenceList', 'Comments',
+        'TrackChanges', 'TrackChangesData', 'RevisionHistory', 'Pagination',
+        'WProofreader', 'MathType', 'SlashCommand', 'Template', 'DocumentOutline',
+        'FormatPainter', 'TableOfContents', 'PasteFromOfficeEnhanced', 'CaseChange',
+        'MultiLevelList'
+    ];
+
     function csrfToken() {
         return $('meta[name="csrf-token"]').attr('content') || '';
     }
@@ -71,7 +88,7 @@
     $(function () {
         // ---- Rich text editor for the post body --------------------------
         var body = document.querySelector('#post-body');
-        var Editor = window.ClassicEditor || (window.CKEDITOR && window.CKEDITOR.ClassicEditor);
+        var Editor = (window.CKEDITOR && window.CKEDITOR.ClassicEditor) || window.ClassicEditor;
 
         function warn(msg) {
             $(body).before($('<p class="form-hint"></p>').css('color', '#b91c1c').text(msg));
@@ -84,15 +101,35 @@
         } else if (body && Editor) {
             var uploadUrl = $(body).data('upload-url');
             Editor.create(body, {
+                removePlugins: REMOVE,
                 extraPlugins: uploadUrl ? [uploadPlugin(uploadUrl, csrfToken())] : [],
                 toolbar: {
                     items: [
                         'heading', '|',
                         'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
                         'outdent', 'indent', '|',
-                        'imageUpload', 'blockQuote', 'insertTable', 'mediaEmbed', '|',
+                        'uploadImage', 'blockQuote', 'insertTable', 'mediaEmbed', '|',
                         'undo', 'redo'
                     ]
+                },
+                image: {
+                    // Drag the corner handles to resize, or pick a preset width.
+                    resizeUnit: '%',
+                    resizeOptions: [
+                        { name: 'resizeImage:original', value: null, label: 'Original' },
+                        { name: 'resizeImage:25', value: '25', label: '25%' },
+                        { name: 'resizeImage:50', value: '50', label: '50%' },
+                        { name: 'resizeImage:75', value: '75', label: '75%' }
+                    ],
+                    toolbar: [
+                        'imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|',
+                        'toggleImageCaption', 'imageTextAlternative', '|',
+                        'resizeImage', '|',
+                        'linkImage'
+                    ]
+                },
+                table: {
+                    contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
                 }
             }).then(function (editor) {
                 editorInstance = editor;

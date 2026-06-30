@@ -109,7 +109,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('vendor/ckeditor5/ckeditor.js') }}?v={{ filemtime(public_path('vendor/ckeditor5/ckeditor.js')) }}"></script>
+    <script src="{{ asset('vendor/ckeditor5-super/ckeditor.js') }}?v={{ filemtime(public_path('vendor/ckeditor5-super/ckeditor.js')) }}"></script>
     <script src="{{ asset('js/media-library.js') }}?v={{ filemtime(public_path('js/media-library.js')) }}"></script>
     <script src="{{ asset('js/admin-blog.js') }}?v={{ filemtime(public_path('js/admin-blog.js')) }}"></script>
 @endpush
