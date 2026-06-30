@@ -40,6 +40,7 @@
                 <p class="form-hint">Use the image button in the toolbar (or paste / drag an image straight into the editor) to add pictures inside the article.</p>
                 <textarea id="post-body" name="body" rows="16"
                     data-upload-url="{{ route('admin.blog.upload') }}">{{ old('body', $post->body) }}</textarea>
+                <button type="button" class="btn btn-ghost btn-sm" id="ml-content-btn" style="margin-top:8px">🗂️ Insert image from library</button>
             </div>
         </div>
 
@@ -85,6 +86,7 @@
                 <img alt="New cover preview" class="cover-preview" id="cover-preview" hidden>
                 <input type="file" id="cover_file" name="cover_file" accept="image/*">
                 <p class="form-hint">Upload a JPG, PNG, WEBP or GIF (max 5&nbsp;MB). Replaces the current cover.</p>
+                <button type="button" class="btn btn-ghost btn-sm" id="ml-cover-btn" style="margin-bottom:8px">🗂️ Choose from library</button>
                 <input type="text" id="cover_image" name="cover_image"
                     value="{{ old('cover_image', $post->cover_image) }}" maxlength="255"
                     placeholder="…or paste an image URL">
@@ -102,9 +104,12 @@
         <button type="submit" class="btn">{{ $editing ? 'Update post' : 'Create post' }}</button>
     </div>
 </form>
+
+@include('partials.media-library')
 @endsection
 
 @push('scripts')
     <script src="{{ asset('vendor/ckeditor5/ckeditor.js') }}?v={{ filemtime(public_path('vendor/ckeditor5/ckeditor.js')) }}"></script>
+    <script src="{{ asset('js/media-library.js') }}?v={{ filemtime(public_path('js/media-library.js')) }}"></script>
     <script src="{{ asset('js/admin-blog.js') }}?v={{ filemtime(public_path('js/admin-blog.js')) }}"></script>
 @endpush

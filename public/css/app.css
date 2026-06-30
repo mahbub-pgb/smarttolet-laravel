@@ -2227,3 +2227,17 @@ code {
     width: auto;
     margin: 0;
 }
+
+/* Central media library picker */
+.ml-grid {
+    max-height: 52vh;
+    overflow-y: auto;
+    padding: 2px;
+}
+.ml-more {
+    text-align: center;
+    margin-top: 12px;
+}
+#ml-upload-status {
+    margin-top: 12px;
+}

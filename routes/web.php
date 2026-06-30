@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController
 use App\Http\Controllers\Web\Auth\AuthController;
 use App\Http\Controllers\Web\BlogController;
 use App\Http\Controllers\Web\DashboardListingController;
+use App\Http\Controllers\Web\MediaController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ListingController;
 use App\Http\Controllers\Web\ProfileController;
@@ -108,6 +109,10 @@ Route::middleware(['auth:web', 'web.permission:manage_blog'])
         Route::get('/blog/create', [AdminBlogController::class, 'create'])->name('blog.create');
         Route::post('/blog', [AdminBlogController::class, 'store'])->name('blog.store');
         Route::post('/blog/upload-image', [AdminBlogController::class, 'uploadImage'])->name('blog.upload');
+
+        // Central media library (list existing / upload new) for the picker.
+        Route::get('/media', [MediaController::class, 'index'])->name('media.index');
+        Route::post('/media', [MediaController::class, 'store'])->name('media.store');
         Route::get('/blog/{post}/edit', [AdminBlogController::class, 'edit'])->name('blog.edit');
         Route::put('/blog/{post}', [AdminBlogController::class, 'update'])->name('blog.update');
         Route::delete('/blog/{post}', [AdminBlogController::class, 'destroy'])->name('blog.destroy');

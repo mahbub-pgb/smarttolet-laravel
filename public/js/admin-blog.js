@@ -77,6 +77,8 @@
             $(body).before($('<p class="form-hint"></p>').css('color', '#b91c1c').text(msg));
         }
 
+        var editorInstance = null;
+
         if (body && !Editor) {
             warn('Rich editor could not load. You can still type / paste HTML in the box below.');
         } else if (body && Editor) {
@@ -92,11 +94,40 @@
                         'undo', 'redo'
                     ]
                 }
+            }).then(function (editor) {
+                editorInstance = editor;
             }).catch(function (err) {
                 if (window.console) console.error('[blog] CKEditor failed to start:', err);
                 warn('Rich editor failed to start — writing in plain HTML mode. Open the browser console (F12) for details.');
             });
         }
+
+        // ---- Central media library buttons -------------------------------
+        // Insert a library image into the article body at the cursor.
+        $('#ml-content-btn').on('click', function () {
+            if (!window.MediaLibrary) { return; }
+            window.MediaLibrary.open(function (url) {
+                if (editorInstance) {
+                    editorInstance.execute('insertImage', { source: url });
+                    editorInstance.editing.view.focus();
+                } else {
+                    // Plain-HTML fallback when the rich editor didn't load.
+                    var $b = $('#post-body');
+                    $b.val($b.val() + '\n<img src="' + url + '" alt="">');
+                }
+            });
+        });
+
+        // Pick a cover image from the library.
+        $('#ml-cover-btn').on('click', function () {
+            if (!window.MediaLibrary) { return; }
+            window.MediaLibrary.open(function (url) {
+                $('#cover_image').val(url);
+                $('#cover-preview').attr('src', url).removeAttr('hidden');
+                $('#cover-current').attr('hidden', true);
+                $('input[name="remove_cover"]').prop('checked', false);
+            });
+        });
 
         // ---- Cover image: live preview before upload ---------------------
         $('#cover_file').on('change', function () {
