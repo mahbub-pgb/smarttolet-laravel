@@ -14,10 +14,17 @@
     <aside class="admin-sidebar">
         <a href="{{ route('home') }}" class="brand" style="color:#fff;padding:0 22px;display:block;margin-bottom:24px">Smart<span>ToLet</span></a>
         <nav class="admin-nav">
+            @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Dashboard</a>
             <a href="{{ route('admin.listings.index') }}" class="{{ request()->routeIs('admin.listings.*') ? 'active' : '' }}">🏠 Manage Listings</a>
+            @endif
+            @if ($user->hasPermission(\App\Enums\Permission::ManageBlog))
+            <a href="{{ route('admin.blog.index') }}" class="{{ request()->routeIs('admin.blog.*') ? 'active' : '' }}">📝 Manage Blog</a>
+            @endif
+            @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
             <a href="{{ route('admin.settings.maps') }}" class="{{ request()->routeIs('admin.settings.maps') ? 'active' : '' }}">🗺️ Map Settings</a>
             <a href="{{ route('admin.settings.sms') }}" class="{{ request()->routeIs('admin.settings.sms') ? 'active' : '' }}">✉️ SMS Settings</a>
+            @endif
             <div class="admin-nav-sep">Site</div>
             <a href="{{ route('listings.index') }}">🏠 View Listings</a>
             <a href="{{ route('dashboard') }}">👤 My Account</a>

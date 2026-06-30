@@ -20,6 +20,7 @@
             <nav class="nav-links">
                 <a href="{{ route('listings.index') }}" class="{{ request()->routeIs('listings.index') ? 'active' : '' }}">Listings</a>
                 <a href="{{ route('listings.map') }}" class="{{ request()->routeIs('listings.map') ? 'active' : '' }}">Map</a>
+                <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
                 @if ($user)
                 @if ($user->isStaff())
                 <a href="{{ route('admin.dashboard') }}"
@@ -60,6 +61,7 @@
                     <h4>Explore</h4>
                     <a href="{{ route('listings.index') }}">All Listings</a>
                     <a href="{{ route('listings.map') }}">Map View</a>
+                    <a href="{{ route('blog.index') }}">Blog</a>
                     <a href="{{ route('home') }}">Home</a>
                 </div>
                 <div>

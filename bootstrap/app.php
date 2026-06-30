@@ -3,6 +3,7 @@
 use App\Exceptions\ApiException;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureMaintenanceModeAllows;
+use App\Http\Middleware\EnsureWebPermission;
 use App\Http\Middleware\EnsureWebRole;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\RequireRole;
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => RequirePermission::class,
             'role' => RequireRole::class,
             'web.role' => EnsureWebRole::class,
+            'web.permission' => EnsureWebPermission::class,
             'maintenance.gate' => EnsureMaintenanceModeAllows::class,
         ]);
 

@@ -85,7 +85,7 @@ class BlogPost extends Model
 
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(BlogTag::class);
+        return $this->belongsToMany(BlogTag::class, 'blog_post_tag');
     }
 
     public function scopePublished(Builder $query): Builder

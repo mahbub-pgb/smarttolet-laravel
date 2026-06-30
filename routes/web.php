@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Web\Admin\BlogController as AdminBlogController;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\ListingController as AdminListingController;
 use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Web\Auth\AuthController;
+use App\Http\Controllers\Web\BlogController;
 use App\Http\Controllers\Web\DashboardListingController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ListingController;
@@ -29,6 +31,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/listings', [ListingController::class, 'index'])->name('listings.index');
 Route::get('/map', [ListingController::class, 'map'])->name('listings.map');
 Route::get('/listings/{slug}', [ListingController::class, 'show'])->name('listings.show');
+
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 // --- Guest auth ----------------------------------------------------------
 Route::middleware('guest:web')->group(function () {
@@ -92,4 +97,18 @@ Route::middleware(['auth:web', 'web.role:admin,super_admin'])
         Route::get('/settings/sms', [AdminSettingsController::class, 'sms'])->name('settings.sms');
         Route::post('/settings/sms', [AdminSettingsController::class, 'updateSms'])->name('settings.sms.update');
         Route::post('/settings/sms/test', [AdminSettingsController::class, 'testSms'])->name('settings.sms.test');
+    });
+
+// --- Blog management (moderator/editor + above, guarded on manage_blog) ----
+Route::middleware(['auth:web', 'web.permission:manage_blog'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/blog', [AdminBlogController::class, 'index'])->name('blog.index');
+        Route::get('/blog/create', [AdminBlogController::class, 'create'])->name('blog.create');
+        Route::post('/blog', [AdminBlogController::class, 'store'])->name('blog.store');
+        Route::post('/blog/upload-image', [AdminBlogController::class, 'uploadImage'])->name('blog.upload');
+        Route::get('/blog/{post}/edit', [AdminBlogController::class, 'edit'])->name('blog.edit');
+        Route::put('/blog/{post}', [AdminBlogController::class, 'update'])->name('blog.update');
+        Route::delete('/blog/{post}', [AdminBlogController::class, 'destroy'])->name('blog.destroy');
     });
