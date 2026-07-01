@@ -17,7 +17,13 @@
     <header class="site-header">
         <div class="container nav">
             <a href="{{ route('home') }}" class="brand">Smart<span>ToLet</span></a>
-            <nav class="nav-links">
+            <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Toggle menu"
+                aria-controls="primary-nav" aria-expanded="false">
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
+            <nav class="nav-links" id="primary-nav">
                 <a href="{{ route('listings.index') }}" class="{{ request()->routeIs('listings.index') ? 'active' : '' }}">Listings</a>
                 <a href="{{ route('listings.map') }}" class="{{ request()->routeIs('listings.map') ? 'active' : '' }}">Map</a>
                 <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
@@ -87,6 +93,7 @@
         </div>
     </footer>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    <script src="{{ asset('js/nav.js') }}"></script>
     @stack('scripts')
 </body>
 

@@ -80,6 +80,40 @@ img {
     align-items: center;
     gap: 6px;
 }
+
+/* Hamburger button — hidden on desktop, shown in the mobile media query. */
+.nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 42px;
+    height: 42px;
+    padding: 0 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    cursor: pointer;
+}
+.nav-toggle-bar {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--ink);
+    border-radius: 2px;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+.nav-toggle.open .nav-toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+.nav-toggle.open .nav-toggle-bar:nth-child(2) {
+    opacity: 0;
+}
+.nav-toggle.open .nav-toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
 .nav-links a {
     padding: 8px 14px;
     border-radius: 8px;
@@ -318,12 +352,14 @@ img {
 }
 .card-media {
     position: relative;
-    aspect-ratio: 16 / 10;
+    /* aspect-ratio: 16 / 10; */
     background: #e2e8f0
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5L5 21'/%3E%3C/svg%3E")
         center/64px no-repeat;
 }
 .card-media img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -540,7 +576,9 @@ img {
     background: rgba(255, 255, 255, 0.25);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 6px 18px rgba(0, 0, 0, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+        0 6px 18px rgba(0, 0, 0, 0.18);
     transition: background 0.2s ease;
 }
 .reveal-overlay:hover {
@@ -629,6 +667,13 @@ img {
     border-radius: var(--radius);
     border: 1px solid var(--line);
 }
+/* Listing-detail map: a fixed, in-flow box — NOT the full-screen /map sizing.
+   Scoped with the id so it overrides #map above on specificity. */
+#map.detail-map {
+    height: 360px;
+    min-height: 0;
+    margin-top: 12px;
+}
 .map-popup {
     font-family: inherit;
 }
@@ -685,7 +730,10 @@ img {
     color: var(--ink);
     font-size: 0.88rem;
     font-weight: 500;
-    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    transition:
+        border-color 0.15s,
+        background 0.15s,
+        color 0.15s;
 }
 .cat-pill:hover {
     border-color: var(--brand);
@@ -745,6 +793,38 @@ img {
     min-width: 96px;
     background: var(--card);
     color: var(--ink);
+}
+
+/* --- Map page header + filters: mobile --- */
+@media (max-width: 640px) {
+    /* Stack the "Explore on the map" heading above its action buttons. */
+    .section-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    /* Wrap the filter row so every control is visible (no cramped scroll). */
+    .map-filters {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        padding-bottom: 0;
+    }
+    .map-filters > * {
+        flex: 1 1 45%;
+    }
+    /* The rent slider and Apply/Clear buttons each get their own full row. */
+    .rent-slider,
+    .map-filter-actions {
+        flex-basis: 100%;
+    }
+    .map-filter-field select,
+    .map-filter-field input {
+        width: 100%;
+        min-width: 0;
+    }
+    .map-filter-actions .btn {
+        flex: 1 1 auto;
+    }
 }
 
 /* --- Dual-thumb rent range slider --- */
@@ -980,10 +1060,20 @@ img {
     text-align: center;
 }
 @keyframes bell-nudge {
-    0%, 85%, 100% { transform: rotate(0); }
-    88% { transform: rotate(12deg); }
-    92% { transform: rotate(-10deg); }
-    96% { transform: rotate(6deg); }
+    0%,
+    85%,
+    100% {
+        transform: rotate(0);
+    }
+    88% {
+        transform: rotate(12deg);
+    }
+    92% {
+        transform: rotate(-10deg);
+    }
+    96% {
+        transform: rotate(6deg);
+    }
 }
 .admin-nav-sep {
     color: #64748b;
@@ -1129,8 +1219,38 @@ code {
     .hero h1 {
         font-size: 2.1rem;
     }
-    .nav-links a:not(.btn) {
+    .nav-toggle {
+        display: flex;
+    }
+    /* Collapse the links into a dropdown panel anchored under the header. */
+    .nav-links {
+        position: absolute;
+        top: 66px;
+        left: 0;
+        right: 0;
         display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 10px 16px 14px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        box-shadow: var(--shadow);
+    }
+    .nav-links.open {
+        display: flex;
+    }
+    .nav-links a,
+    .nav-links .btn,
+    .nav-links form,
+    .nav-links form .btn {
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+    }
+    .nav-links a:not(.btn) {
+        padding: 10px 12px;
+        border-radius: 8px;
     }
 }
 
@@ -1873,6 +1993,9 @@ code {
 
 @media (max-width: 640px) {
     .gallery2-main img {
+        height: 240px;
+    }
+    #map.detail-map {
         height: 260px;
     }
 }
@@ -2146,7 +2269,9 @@ code {
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.18s ease, transform 0.18s ease;
+    transition:
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
 }
 .blog-card:hover {
     box-shadow: var(--shadow);
@@ -2266,6 +2391,9 @@ code {
     font-size: 1.04rem;
     line-height: 1.75;
     color: #334155;
+    /* Break long words / URLs so they never force horizontal scroll. */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 .prose h2 {
     margin: 1.6em 0 0.5em;
@@ -2437,4 +2565,44 @@ code {
 .prose .image-inline {
     display: inline-flex;
     max-width: 100%;
+}
+
+/* Keep wide CKEditor blocks (tables, media embeds) inside the column: wide
+   tables scroll on their own instead of stretching the whole page. */
+.prose figure.table {
+    max-width: 100%;
+    overflow-x: auto;
+}
+.prose figure.media,
+.prose .media {
+    max-width: 100%;
+}
+.prose iframe {
+    max-width: 100%;
+}
+
+/* --- Single post / static page: mobile --- */
+@media (max-width: 640px) {
+    .post-head h1 {
+        font-size: 1.55rem;
+    }
+    .prose {
+        font-size: 1rem;
+    }
+    .prose h2 {
+        font-size: 1.3rem;
+    }
+    .prose h3 {
+        font-size: 1.12rem;
+    }
+    /* Stop side / aligned images floating in a tiny column — stack them. */
+    .prose .image-style-align-left,
+    .prose .image-style-block-align-left,
+    .prose .image-style-align-right,
+    .prose .image-style-block-align-right,
+    .prose .image-style-side {
+        float: none;
+        max-width: 100%;
+        margin: 1.2em auto;
+    }
 }

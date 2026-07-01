@@ -88,7 +88,7 @@
                                 <h3 style="margin:0">Location</h3>
                                 <button type="button" id="get-directions" class="btn btn-sm">🧭 Get directions</button>
                             </div>
-                            <div id="map" style="height:360px;margin-top:12px;border-radius:var(--radius)"
+                            <div id="map" class="detail-map"
                                  data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}"
                                  data-lat="{{ $listing->latitude }}" data-lng="{{ $listing->longitude }}"
                                  data-zoom="{{ $mapPinnedZoom }}"
