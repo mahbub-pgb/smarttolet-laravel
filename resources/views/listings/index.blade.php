@@ -25,10 +25,21 @@
                         </div>
                         <div class="field">
                             <label>Area</label>
+                            @php($currentArea = request('area'))
+                            @php($areaGroups = config('bd_areas', []))
+                            @php($knownAreas = collect($areaGroups)->flatten())
                             <select name="area" class="js-area-select" data-placeholder="Search or pick an area…">
                                 <option value="">Any area</option>
-                                @foreach ($areas as $area)
-                                    <option value="{{ $area }}" @selected(request('area') === $area)>{{ $area }}</option>
+                                {{-- Preserve a typed/custom area that isn't in the curated list. --}}
+                                @if ($currentArea && ! $knownAreas->contains($currentArea))
+                                    <option value="{{ $currentArea }}" selected>{{ $currentArea }}</option>
+                                @endif
+                                @foreach ($areaGroups as $city => $cityAreas)
+                                    <optgroup label="{{ $city }}">
+                                        @foreach ($cityAreas as $area)
+                                            <option value="{{ $area }}" @selected($area === $currentArea)>{{ $area }}</option>
+                                        @endforeach
+                                    </optgroup>
                                 @endforeach
                             </select>
                         </div>
