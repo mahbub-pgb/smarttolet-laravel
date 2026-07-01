@@ -1219,14 +1219,70 @@ code {
     font-size: 0.85em;
 }
 
+/* --- Admin: mobile (stack the sidebar into a horizontal nav bar) --- */
 @media (max-width: 820px) {
-    .admin-sidebar {
-        width: 64px;
+    .admin-body {
+        flex-direction: column;
     }
-    .admin-sidebar .brand,
-    .admin-nav a span,
+    /* Sidebar becomes a pinned top bar; its links scroll horizontally. */
+    .admin-sidebar {
+        width: 100%;
+        height: auto;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        padding: 10px 0;
+    }
+    .admin-sidebar .brand {
+        display: none;
+    }
+    .admin-nav {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 0 12px 2px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .admin-nav a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        justify-content: flex-start;
+    }
+    /* The "Site" text divider doesn't fit a horizontal row. */
     .admin-nav-sep {
         display: none;
+    }
+    /* Topbar scrolls with the content (the nav bar above stays pinned). */
+    .admin-topbar {
+        position: static;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        padding: 12px 16px;
+    }
+    .admin-topbar h1 {
+        font-size: 1.1rem;
+    }
+    .admin-user {
+        gap: 10px;
+        font-size: 0.82rem;
+        flex-wrap: wrap;
+    }
+    .admin-content {
+        padding: 16px;
+    }
+    /* Dashboard two-column panels: single column (minmax(340px) overflows a phone). */
+    .admin-cols {
+        grid-template-columns: 1fr;
+    }
+    /* Wide tables scroll inside their panel instead of stretching the page.
+       A min-width keeps columns readable so the panel actually scrolls
+       (a width:100% table would just cram the columns instead). */
+    .panel {
+        overflow-x: auto;
+    }
+    .panel .table {
+        min-width: 560px;
     }
 }
 
