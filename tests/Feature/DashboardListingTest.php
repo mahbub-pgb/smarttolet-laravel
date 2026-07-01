@@ -7,11 +7,21 @@ namespace Tests\Feature;
 use App\Models\Listing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DashboardListingTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Keep photo uploads off the real disk; the store form now requires one.
+        Storage::fake('public');
+    }
 
     /**
      * @return array<string, mixed>
@@ -38,6 +48,8 @@ class DashboardListingTest extends TestCase
             'amenities' => ['wifi', 'lift', 'parking'],
             'occupancy_rules' => ['family_only'],
             'video_tour_url' => 'https://youtube.com/watch?v=abc123',
+            // A new listing must include at least one photo.
+            'images' => [UploadedFile::fake()->create('photo.jpg', 500, 'image/jpeg')],
         ], $overrides);
     }
 
@@ -76,6 +88,10 @@ class DashboardListingTest extends TestCase
         $this->assertSame(50000, $listing->advance_amount);
         $this->assertSame(['family_only'], $listing->occupancy_rules);
         $this->assertSame(1, $listing->balconies);
+
+        // The uploaded photo must persist as the listing's (cover) image.
+        $this->assertNotEmpty($listing->images, 'Uploaded image was not saved.');
+        $this->assertStringContainsString('/storage/listings/', $listing->images[0]['url']);
     }
 
     public function test_user_can_save_a_draft(): void
@@ -104,6 +120,20 @@ class DashboardListingTest extends TestCase
         $listing->update(['status' => Listing::STATUS_APPROVED, 'approved_at' => now(), 'expires_at' => now()->addDays(30)]);
 
         $this->assertSame(1, Listing::query()->publiclyVisible()->count());
+    }
+
+    public function test_new_listing_requires_at_least_one_photo(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'web')
+            ->post(route('dashboard.listings.store'), $this->validListingPayload([
+                'as_draft' => 0,
+                'images' => [],
+            ]))
+            ->assertSessionHasErrors('images');
+
+        $this->assertSame(0, Listing::where('owner_id', $user->id)->count());
     }
 
     public function test_user_cannot_self_publish_via_a_forged_status_field(): void

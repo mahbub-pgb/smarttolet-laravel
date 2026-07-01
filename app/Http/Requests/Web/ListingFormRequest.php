@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Web;
 
 use App\Models\Listing;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -77,5 +78,30 @@ abstract class ListingFormRequest extends FormRequest
             'video_tour_url.regex' => 'Enter a valid YouTube URL.',
             'latitude.required_with' => 'Drop a pin on the map to set the location.',
         ];
+    }
+
+    /**
+     * Whether the form must include at least one photo (uploaded or picked from
+     * the library). Enforced on create; edits may keep their existing images.
+     */
+    protected function requiresAtLeastOneImage(): bool
+    {
+        return false;
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if (! $this->requiresAtLeastOneImage()) {
+                return;
+            }
+
+            $uploaded = array_filter((array) $this->file('images', []));
+            $picked = array_filter((array) $this->input('picked', []));
+
+            if ($uploaded === [] && $picked === []) {
+                $validator->errors()->add('images', 'Please add at least one photo of the property.');
+            }
+        });
     }
 }

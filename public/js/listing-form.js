@@ -319,6 +319,21 @@
                 }
             }
 
+            // A new listing must include at least one photo (uploaded or picked).
+            // Edits are exempt — they can keep their already-saved images.
+            var isCreate = $form.find('input[name="_method"]').length === 0;
+            if (isCreate) {
+                var $photo = $('#open-gallery');
+                clearError($photo);
+                var picker = document.getElementById('img-input');
+                var uploadCount = (picker && picker.files) ? picker.files.length : 0;
+                var pickedCount = $form.find('#picked-inputs input[name="picked[]"]').length;
+                if (uploadCount + pickedCount === 0) {
+                    setError($photo, 'Please add at least one photo of the property.');
+                    firstBad = firstBad || $photo;
+                }
+            }
+
             if (firstBad) {
                 e.preventDefault();
                 firstBad.trigger('focus');
@@ -328,6 +343,10 @@
 
         // Clear a field's red mark as soon as the user starts fixing it.
         $form.on('input change', '.invalid', function () { clearError($(this)); });
+
+        // Opening the gallery / choosing files clears the "add a photo" mark.
+        $('#open-gallery').on('click', function () { clearError($('#open-gallery')); });
+        $('#img-input').on('change', function () { clearError($('#open-gallery')); });
 
         // Server-returned errors (after a redirect-back): mark those fields red
         // too, so the user sees exactly what to fix — not just the top summary.

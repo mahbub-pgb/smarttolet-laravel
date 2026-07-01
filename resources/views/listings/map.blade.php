@@ -5,6 +5,7 @@
 @php($mapsKey = config('geo.google.browser_key'))
 
 @push('head')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     @unless ($mapsKey)
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
@@ -32,12 +33,10 @@
                  dropdown swaps the active `type`/`occupancy` filter; the rest
                  reload with the chosen rent/beds/radius/sort parameters. --}}
             <form method="GET" action="{{ route('listings.map') }}" class="map-filters" id="map-filters">
-                {{-- Preserve the active keyword filters across reloads. --}}
-                @foreach (['q', 'area'] as $keep)
-                    @if (request()->filled($keep))
-                        <input type="hidden" name="{{ $keep }}" value="{{ request($keep) }}">
-                    @endif
-                @endforeach
+                {{-- Preserve the active keyword filter across reloads. --}}
+                @if (request()->filled('q'))
+                    <input type="hidden" name="q" value="{{ request('q') }}">
+                @endif
                 {{-- The category select writes the chosen rule into these before submit. --}}
                 <input type="hidden" name="type" id="cat-type" value="{{ request('type') }}">
                 <input type="hidden" name="occupancy" id="cat-occupancy" value="{{ request('occupancy') }}">
@@ -49,6 +48,27 @@
                         @foreach (\App\Models\Listing::NAV_CATEGORIES as $cat)
                             <option value="{{ $cat['param'] }}:{{ $cat['value'] }}"
                                 @selected(request($cat['param']) === $cat['value'])>{{ $cat['icon'] }} {{ $cat['label'] }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="map-filter-field">
+                    Area
+                    @php($currentArea = request('area'))
+                    @php($areaGroups = config('bd_areas', []))
+                    @php($knownAreas = collect($areaGroups)->flatten())
+                    <select name="area" class="js-area-select" data-placeholder="Any area">
+                        <option value="">Any area</option>
+                        {{-- Preserve a typed/custom area that isn't in the curated list. --}}
+                        @if ($currentArea && ! $knownAreas->contains($currentArea))
+                            <option value="{{ $currentArea }}" selected>{{ $currentArea }}</option>
+                        @endif
+                        @foreach ($areaGroups as $city => $cityAreas)
+                            <optgroup label="{{ $city }}">
+                                @foreach ($cityAreas as $area)
+                                    <option value="{{ $area }}" @selected($area === $currentArea)>{{ $area }}</option>
+                                @endforeach
+                            </optgroup>
                         @endforeach
                     </select>
                 </label>
@@ -122,6 +142,8 @@
     @else
         <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
     @endunless
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('js/area-select.js') }}"></script>
     <script src="{{ asset('js/listing-map.js') }}"></script>
     <script src="{{ asset('js/rent-slider.js') }}"></script>
     @if ($mapsKey)
