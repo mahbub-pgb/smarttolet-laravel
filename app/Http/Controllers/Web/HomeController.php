@@ -22,10 +22,11 @@ class HomeController extends Controller
 
         $areas = Listing::query()
             ->publiclyVisible()
+            ->whereNotNull('area_name')
+            ->where('area_name', '!=', '')
             ->select('area_name')
             ->distinct()
             ->orderBy('area_name')
-            ->limit(12)
             ->pluck('area_name');
 
         $posts = BlogPost::query()

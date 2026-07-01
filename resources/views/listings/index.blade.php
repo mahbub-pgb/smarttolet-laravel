@@ -25,7 +25,12 @@
                         </div>
                         <div class="field">
                             <label>Area</label>
-                            <input type="text" name="area" value="{{ request('area') }}" placeholder="e.g. Dhanmondi">
+                            <select name="area" class="js-area-select" data-placeholder="Search or pick an area…">
+                                <option value="">Any area</option>
+                                @foreach ($areas as $area)
+                                    <option value="{{ $area }}" @selected(request('area') === $area)>{{ $area }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="field">
                             <label>Type</label>
@@ -86,3 +91,12 @@
         </div>
     </section>
 @endsection
+
+@push('head')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('js/area-select.js') }}"></script>
+@endpush

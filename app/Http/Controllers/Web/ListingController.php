@@ -27,8 +27,9 @@ class ListingController extends Controller
             ->withQueryString();
 
         $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
+        $areas = $this->areaOptions();
 
-        return view('listings.index', compact('listings', 'types'));
+        return view('listings.index', compact('listings', 'types', 'areas'));
     }
 
     /** GET /listings/{slug} — single listing detail. */
@@ -121,5 +122,23 @@ class ListingController extends Controller
         }
 
         return $filters;
+    }
+
+    /**
+     * Distinct area names across publicly visible listings, for the area
+     * search datalist (type-to-filter / scroll-to-pick).
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function areaOptions(): \Illuminate\Support\Collection
+    {
+        return Listing::query()
+            ->publiclyVisible()
+            ->whereNotNull('area_name')
+            ->where('area_name', '!=', '')
+            ->select('area_name')
+            ->distinct()
+            ->orderBy('area_name')
+            ->pluck('area_name');
     }
 }

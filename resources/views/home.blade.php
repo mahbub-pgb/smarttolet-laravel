@@ -9,7 +9,8 @@
         <p>Browse thousands of rooms, apartments, and offices for rent. Search by area, explore on the map, and connect directly with verified owners.</p>
         <form method="GET" action="{{ route('listings.index') }}" class="searchbar">
             <input type="text" name="q" placeholder="Search by title or keyword…">
-            <input type="text" name="area" placeholder="Area / location">
+            <input type="text" name="area" list="area-options" placeholder="Area / location" autocomplete="off">
+            @include('partials.area-datalist')
             <select name="type">
                 <option value="">Any type</option>
                 <option value="apartment">Apartment</option>
@@ -33,7 +34,7 @@
             </div>
         </div>
         <div class="chips">
-            @foreach ($areas as $area)
+            @foreach ($areas->take(12) as $area)
             <a href="{{ route('listings.index', ['area' => $area]) }}" class="chip">{{ $area }}</a>
             @endforeach
         </div>
