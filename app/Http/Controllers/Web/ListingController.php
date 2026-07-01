@@ -12,6 +12,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
 
 class ListingController extends Controller
 {
@@ -56,7 +58,12 @@ class ListingController extends Controller
 
         abort_unless($listing->isPubliclyVisible() || $canPreview, 404);
 
-        $listing->increment('view_count');
+        // Count unique visits (per visitor, per day) — reloads by the same
+        // logged-in user or guest browser don't re-count. Owner/staff previews
+        // of their own non-public listing are not counted.
+        if (! $canPreview) {
+            $this->listings->recordVisit($listing, $viewer, $this->visitorFingerprint($request));
+        }
 
         $related = Listing::query()
             ->publiclyVisible()
@@ -176,5 +183,25 @@ class ListingController extends Controller
         $max = (int) Listing::query()->publiclyVisible()->max('rent');
 
         return max((int) (ceil($max / 1000) * 1000), 1000);
+    }
+
+    /**
+     * Stable per-visitor fingerprint for guest view dedupe. Prefers a long-lived
+     * first-party cookie (most reliable per browser); if the visitor has no
+     * cookie yet, one is queued for next time and we fall back to hashed ip+ua
+     * for this request.
+     */
+    private function visitorFingerprint(Request $request): string
+    {
+        $token = $request->cookie('visitor_token');
+
+        if (is_string($token) && $token !== '') {
+            return hash('sha256', 'c:'.$token);
+        }
+
+        // No cookie yet — set one (1 year) and fall back to ip+ua this request.
+        Cookie::queue(cookie('visitor_token', (string) Str::uuid(), 60 * 24 * 365));
+
+        return hash('sha256', 'f:'.$request->ip().'|'.$request->userAgent());
     }
 }

@@ -499,20 +499,28 @@ class ListingService
         return (int) $listing->contact_view_count;
     }
 
-    private function recordVisit(Listing $listing, ?User $viewer, ?string $fingerprint): void
+    /**
+     * Record a listing visit, incrementing view_count only for a genuinely new
+     * visitor-per-day (so reloads by the same user/guest don't inflate views).
+     * Guests are identified by an opaque fingerprint (cookie token or ip+ua).
+     */
+    public function recordVisit(Listing $listing, ?User $viewer, ?string $fingerprint): void
     {
-        $listing->increment('view_count');
-
         $today = now()->toDateString();
         $attributes = $viewer
             ? ['listing_id' => $listing->id, 'visitor_id' => $viewer->id, 'visited_on' => $today]
             : ['listing_id' => $listing->id, 'visitor_fingerprint' => $fingerprint, 'visited_on' => $today];
 
-        // Daily dedupe; ignore unique-constraint races.
+        // Daily dedupe; ignore unique-constraint races. Only count the first
+        // visit of the day for this visitor.
         try {
-            ListingVisit::firstOrCreate($attributes, ['source' => request('source')]);
+            $visit = ListingVisit::firstOrCreate($attributes, ['source' => request('source')]);
+
+            if ($visit->wasRecentlyCreated) {
+                $listing->increment('view_count');
+            }
         } catch (\Throwable) {
-            // visit already recorded for this visitor today
+            // visit already recorded for this visitor today (unique race)
         }
     }
 
