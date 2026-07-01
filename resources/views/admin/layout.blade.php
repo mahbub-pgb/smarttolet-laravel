@@ -16,7 +16,10 @@
         <nav class="admin-nav">
             @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
             <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Dashboard</a>
-            <a href="{{ route('admin.listings.index') }}" class="{{ request()->routeIs('admin.listings.*') ? 'active' : '' }}">🏠 Manage Listings</a>
+            <a href="{{ route('admin.listings.index') }}" class="{{ request()->routeIs('admin.listings.*') ? 'active' : '' }}">
+                🏠 Manage Listings
+                @if (($pendingListingCount ?? 0) > 0)<span class="nav-badge">{{ $pendingListingCount }}</span>@endif
+            </a>
             @endif
             @if ($user->hasPermission(\App\Enums\Permission::ManageBlog))
             <a href="{{ route('admin.blog.index') }}" class="{{ request()->routeIs('admin.blog.*') ? 'active' : '' }}">📝 Manage Blog</a>
@@ -35,6 +38,14 @@
         <header class="admin-topbar">
             <h1>@yield('heading', 'Dashboard')</h1>
             <div class="admin-user">
+                @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
+                    <a href="{{ route('admin.listings.index', ['status' => 'pending']) }}"
+                       class="admin-bell {{ ($pendingListingCount ?? 0) > 0 ? 'has-pending' : '' }}"
+                       title="{{ $pendingListingCount ?? 0 }} listing(s) pending review">
+                        🔔
+                        @if (($pendingListingCount ?? 0) > 0)<span class="bell-badge">{{ $pendingListingCount }}</span>@endif
+                    </a>
+                @endif
                 <span>{{ $user->name ?? $user->mobile }} · <strong>{{ $user->role->label() }}</strong></span>
                 <form method="POST" action="{{ route('logout') }}">@csrf<button class="btn btn-ghost btn-sm">Log out</button></form>
             </div>

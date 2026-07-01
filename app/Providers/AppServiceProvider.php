@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Listing;
 use App\Services\Settings\SettingsService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -31,6 +32,21 @@ class AppServiceProvider extends ServiceProvider
         Paginator::defaultSimpleView('vendor.pagination.app-simple');
 
         $this->shareMapZoom();
+        $this->shareAdminPendingCount();
+    }
+
+    /**
+     * Show the admin how many listings are awaiting review — surfaced as a
+     * notification badge in the admin layout (links to the pending list).
+     */
+    private function shareAdminPendingCount(): void
+    {
+        View::composer('admin.layout', function ($view) {
+            $view->with(
+                'pendingListingCount',
+                Listing::query()->where('status', Listing::STATUS_PENDING)->count(),
+            );
+        });
     }
 
     /**

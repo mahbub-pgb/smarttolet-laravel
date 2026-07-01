@@ -528,6 +528,12 @@ class ListingService
 
     private function assertWithinPlanLimit(User $user): void
     {
+        // Staff (moderator/admin/super_admin) are not bound by subscription
+        // plan limits — they can post as many listings as they need.
+        if ($user->isStaff()) {
+            return;
+        }
+
         $subscription = $user->activeSubscription();
         $limit = $subscription?->listingLimit() ?? config('subscription.plans.free.listing_limit');
 

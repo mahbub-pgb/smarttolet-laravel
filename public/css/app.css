@@ -935,6 +935,56 @@ img {
     background: var(--brand);
     color: #fff;
 }
+/* Pending-review count badges (nav + topbar bell). */
+.admin-nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.nav-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+.admin-bell {
+    position: relative;
+    font-size: 1.2rem;
+    text-decoration: none;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.admin-bell.has-pending {
+    animation: bell-nudge 1.8s ease-in-out infinite;
+    transform-origin: top center;
+}
+.bell-badge {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 999px;
+    min-width: 16px;
+    text-align: center;
+}
+@keyframes bell-nudge {
+    0%, 85%, 100% { transform: rotate(0); }
+    88% { transform: rotate(12deg); }
+    92% { transform: rotate(-10deg); }
+    96% { transform: rotate(6deg); }
+}
 .admin-nav-sep {
     color: #64748b;
     font-size: 0.72rem;
