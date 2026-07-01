@@ -24,6 +24,9 @@
             @if ($user->hasPermission(\App\Enums\Permission::ManageBlog))
             <a href="{{ route('admin.blog.index') }}" class="{{ request()->routeIs('admin.blog.*') ? 'active' : '' }}">📝 Manage Blog</a>
             @endif
+            @if ($user->hasPermission(\App\Enums\Permission::ManagePages))
+            <a href="{{ route('admin.pages.index') }}" class="{{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">📄 Manage Pages</a>
+            @endif
             @if ($user->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::SuperAdmin))
             <a href="{{ route('admin.settings.maps') }}" class="{{ request()->routeIs('admin.settings.maps') ? 'active' : '' }}">🗺️ Map Settings</a>
             <a href="{{ route('admin.settings.sms') }}" class="{{ request()->routeIs('admin.settings.sms') ? 'active' : '' }}">✉️ SMS Settings</a>

@@ -63,6 +63,7 @@ enum Role: string
                 Permission::ResolveReports,
                 Permission::ManageUsers,
                 Permission::ManageBlog,
+                Permission::ManagePages,
             ],
             self::Admin => [
                 Permission::ManageModerators,

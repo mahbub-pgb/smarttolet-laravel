@@ -12,7 +12,9 @@ use App\Http\Controllers\Web\DashboardListingController;
 use App\Http\Controllers\Web\MediaController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ListingController;
+use App\Http\Controllers\Web\PageController;
 use App\Http\Controllers\Web\ProfileController;
+use App\Http\Controllers\Web\Admin\PageController as AdminPageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,6 +37,8 @@ Route::get('/listings/{slug}', [ListingController::class, 'show'])->name('listin
 
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
+
+Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 
 // --- Guest auth ----------------------------------------------------------
 Route::middleware('guest:web')->group(function () {
@@ -123,4 +127,18 @@ Route::middleware(['auth:web', 'web.permission:manage_blog'])
         Route::get('/blog/{post}/edit', [AdminBlogController::class, 'edit'])->name('blog.edit');
         Route::put('/blog/{post}', [AdminBlogController::class, 'update'])->name('blog.update');
         Route::delete('/blog/{post}', [AdminBlogController::class, 'destroy'])->name('blog.destroy');
+    });
+
+// --- Static page management (guarded on manage_pages) --------------------
+Route::middleware(['auth:web', 'web.permission:manage_pages'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/pages', [AdminPageController::class, 'index'])->name('pages.index');
+        Route::get('/pages/create', [AdminPageController::class, 'create'])->name('pages.create');
+        Route::post('/pages', [AdminPageController::class, 'store'])->name('pages.store');
+        Route::post('/pages/upload-image', [AdminPageController::class, 'uploadImage'])->name('pages.upload');
+        Route::get('/pages/{page}/edit', [AdminPageController::class, 'edit'])->name('pages.edit');
+        Route::put('/pages/{page}', [AdminPageController::class, 'update'])->name('pages.update');
+        Route::delete('/pages/{page}', [AdminPageController::class, 'destroy'])->name('pages.destroy');
     });

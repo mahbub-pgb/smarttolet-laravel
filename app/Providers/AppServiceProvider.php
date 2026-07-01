@@ -33,6 +33,20 @@ class AppServiceProvider extends ServiceProvider
 
         $this->shareMapZoom();
         $this->shareAdminPendingCount();
+        $this->shareNavigationPages();
+    }
+
+    /**
+     * Share the admin-managed static pages flagged for the header / footer with
+     * the public layout, so their nav links render on every page.
+     */
+    private function shareNavigationPages(): void
+    {
+        View::composer('layouts.app', function ($view) {
+            $pages = app(\App\Services\Page\PageService::class)->navigationPages();
+            $view->with('headerPages', $pages->where('show_in_header', true));
+            $view->with('footerPages', $pages->where('show_in_footer', true));
+        });
     }
 
     /**

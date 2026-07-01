@@ -21,6 +21,10 @@
                 <a href="{{ route('listings.index') }}" class="{{ request()->routeIs('listings.index') ? 'active' : '' }}">Listings</a>
                 <a href="{{ route('listings.map') }}" class="{{ request()->routeIs('listings.map') ? 'active' : '' }}">Map</a>
                 <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
+                @foreach ($headerPages ?? [] as $navPage)
+                <a href="{{ route('pages.show', $navPage->slug) }}"
+                    class="{{ request()->routeIs('pages.show') && request()->route('slug') === $navPage->slug ? 'active' : '' }}">{{ $navPage->title }}</a>
+                @endforeach
                 @if ($user)
                 @if ($user->isStaff())
                 <a href="{{ route('admin.dashboard') }}"
@@ -72,9 +76,11 @@
                 </div>
                 <div>
                     <h4>Company</h4>
-                    <a href="#">About</a>
-                    <a href="#">Contact</a>
-                    <a href="#">Privacy</a>
+                    @forelse ($footerPages ?? [] as $navPage)
+                    <a href="{{ route('pages.show', $navPage->slug) }}">{{ $navPage->title }}</a>
+                    @empty
+                    <a href="{{ route('home') }}">Home</a>
+                    @endforelse
                 </div>
             </div>
             <div class="footer-bottom">© {{ date('Y') }} SmartToLet. All rights reserved.</div>

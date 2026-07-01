@@ -21,6 +21,7 @@ enum Permission: string
     case ReviewListings = 'review_listings';
     case ApproveListings = 'approve_listings';
     case ManageBlog = 'manage_blog';
+    case ManagePages = 'manage_pages';
     case ManageReports = 'manage_reports';
     case ResolveReports = 'resolve_reports';
     case ManageSubscriptions = 'manage_subscriptions';
