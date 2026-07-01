@@ -34,7 +34,7 @@
             </div>
         </div>
         <div class="chips">
-            @foreach ($areas->take(12) as $area)
+            @foreach ($areas as $area)
             <a href="{{ route('listings.index', ['area' => $area]) }}" class="chip">{{ $area }}</a>
             @endforeach
         </div>

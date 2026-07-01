@@ -25,8 +25,11 @@ class HomeController extends Controller
             ->whereNotNull('area_name')
             ->where('area_name', '!=', '')
             ->select('area_name')
-            ->distinct()
+            ->selectRaw('COUNT(*) as listings_count')
+            ->groupBy('area_name')
+            ->orderByDesc('listings_count')
             ->orderBy('area_name')
+            ->limit(10)
             ->pluck('area_name');
 
         $posts = BlogPost::query()
