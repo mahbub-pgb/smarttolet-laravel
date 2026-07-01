@@ -4,6 +4,10 @@
        class="dash-tab {{ request()->routeIs('dashboard') || request()->routeIs('dashboard.listings.*') ? 'active' : '' }}">
         🏠 My Listings
     </a>
+    <a href="{{ route('dashboard.analytics') }}"
+       class="dash-tab {{ request()->routeIs('dashboard.analytics') ? 'active' : '' }}">
+        📊 Analytics
+    </a>
     <a href="{{ route('dashboard.profile') }}"
        class="dash-tab {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}">
         ⚙️ Profile Settings

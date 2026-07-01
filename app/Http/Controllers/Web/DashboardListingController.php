@@ -29,6 +29,26 @@ class DashboardListingController extends Controller
         return view('dashboard.index', compact('user', 'listings'));
     }
 
+    /** GET /dashboard/analytics — views + phone reveals across the user's listings. */
+    public function analytics(Request $request): View
+    {
+        $user = $request->user();
+
+        $listings = $user->listings()
+            ->withCount('contactViews')
+            // Registered users who revealed the number (name + photo for the list).
+            ->with(['contactViews' => fn ($q) => $q->whereNotNull('viewer_id')
+                ->latest()
+                ->with('viewer:id,name,photo')])
+            ->latest()
+            ->get();
+
+        $totalViews = (int) $listings->sum('view_count');
+        $totalContacts = (int) $listings->sum('contact_views_count');
+
+        return view('dashboard.analytics', compact('user', 'listings', 'totalViews', 'totalContacts'));
+    }
+
     /** GET /dashboard/listings/create — blank listing form. */
     public function create(Request $request): View
     {

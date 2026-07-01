@@ -75,6 +75,9 @@ Route::middleware('auth:web')->group(function () {
         Route::put('/listings/{listing}', [DashboardListingController::class, 'update'])->name('listings.update');
         Route::delete('/listings/{listing}', [DashboardListingController::class, 'destroy'])->name('listings.destroy');
 
+        // "Analytics" tab — views + phone reveals across the user's listings.
+        Route::get('/analytics', [DashboardListingController::class, 'analytics'])->name('analytics');
+
         // "Profile Settings" tab.
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -1322,6 +1322,58 @@ code {
 }
 
 /* Avatar (profile) */
+/* Dashboard analytics: per-listing rows + who-revealed chips. */
+.analytics-row {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+}
+.analytics-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.analytics-stats {
+    display: flex;
+    gap: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+}
+.analytics-revealers {
+    margin-top: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+}
+.revealer-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.revealer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg, #f6f7f9);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 12px 4px 4px;
+}
+.revealer-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.avatar.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+}
+
 .avatar-row {
     display: flex;
     align-items: center;
