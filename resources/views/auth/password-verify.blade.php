@@ -13,10 +13,6 @@
             <h1>Enter the code</h1>
             <p class="sub">We sent a reset code to <strong>{{ $mobile }}</strong>.</p>
 
-            @if (session('status'))
-                <div class="alert alert-success">{{ session('status') }}</div>
-            @endif
-
             <form method="POST" action="{{ route('password.verify') }}" data-once>
                 @csrf
                 <div class="field">
