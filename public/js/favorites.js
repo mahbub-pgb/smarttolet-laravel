@@ -15,6 +15,11 @@
             e.stopPropagation();
 
             var $btn = $(this);
+
+            // Guest heart → send them to log in instead of toggling.
+            var loginUrl = $btn.data('login-url');
+            if (loginUrl) { window.location.href = loginUrl; return; }
+
             if ($btn.data('busy')) { return; }
             $btn.data('busy', true);
 

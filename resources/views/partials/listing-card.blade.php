@@ -9,7 +9,10 @@
                 data-url="{{ route('favorites.toggle', $listing) }}"
                 aria-label="Save to favourites" aria-pressed="{{ in_array($listing->id, $favoriteIds ?? []) ? 'true' : 'false' }}">♥</button>
         @else
-            <a href="{{ route('login') }}" class="fav-btn" aria-label="Log in to save" title="Log in to save">♥</a>
+            {{-- A <button> (not <a>) — a nested <a> inside the card's <a> is invalid
+                 HTML and breaks the card layout. Guests are sent to login via JS. --}}
+            <button type="button" class="fav-btn" data-login-url="{{ route('login') }}"
+                aria-label="Log in to save" title="Log in to save">♥</button>
         @endauth
     </div>
     <div class="card-body">
