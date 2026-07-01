@@ -63,6 +63,11 @@
             <div class="alert alert-success">{{ session('status') }}</div>
         </div>
         @endif
+        @if (session('error'))
+        <div class="container" style="padding-top:18px">
+            <div class="alert alert-error">{{ session('error') }}</div>
+        </div>
+        @endif
         @yield('content')
     </main>
 
@@ -103,6 +108,7 @@
     <script src="{{ asset('js/nav.js') }}"></script>
     <script src="{{ asset('js/favorites.js') }}"></script>
     <script src="{{ asset('js/confirm-dialog.js') }}"></script>
+    <script src="{{ asset('js/forms.js') }}"></script>
     @stack('scripts')
 </body>
 

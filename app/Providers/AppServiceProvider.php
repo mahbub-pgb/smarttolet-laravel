@@ -128,6 +128,19 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Forgot-password: cap reset-code requests per IP and per number so a
+        // user (or attacker) can't spam password-reset SMS. Kept short so a
+        // legitimate user is never locked out for long — the OtpService's ~60s
+        // resend cooldown is the primary "please wait" guard; this is a backstop.
+        RateLimiter::for('password-reset', function (Request $request) {
+            $mobile = (string) ($request->input('mobile') ?: $request->ip());
+
+            return [
+                Limit::perMinute(3)->by('pwreset-ip:'.$request->ip()),
+                Limit::perHour(8)->by('pwreset:'.$mobile),
+            ];
+        });
+
         // Very tight limiter for OTP request / verify (per IP + per mobile).
         RateLimiter::for('otp', function (Request $request) {
             $target = (string) ($request->input('mobile') ?? $request->input('email') ?? $request->user()?->id ?? 'anon');

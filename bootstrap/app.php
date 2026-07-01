@@ -101,8 +101,18 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
-        $exceptions->render(function (TooManyRequestsHttpException $e) {
-            return ApiResponse::error('Too many requests. Please slow down.', 429, 'rate_limited');
+        $exceptions->render(function (TooManyRequestsHttpException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return ApiResponse::error('Too many requests. Please slow down.', 429, 'rate_limited');
+            }
+
+            // Web UI: bounce back with a friendly, timed message instead of raw JSON.
+            $retryAfter = (int) ($e->getHeaders()['Retry-After'] ?? 0);
+            $wait = $retryAfter > 0
+                ? "Please try again in {$retryAfter} second".($retryAfter === 1 ? '' : 's').'.'
+                : 'Please wait a moment before trying again.';
+
+            return back()->withInput()->with('error', 'Too many attempts. '.$wait);
         });
 
         // Catch-all for any other HTTP exception within the API.

@@ -22,9 +22,12 @@
                     <label>Password</label>
                     <input type="password" name="password" placeholder="••••••••" required>
                 </div>
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--muted);margin-bottom:18px">
-                    <input type="checkbox" name="remember" value="1"> Remember me
-                </label>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:0.9rem;color:var(--muted)">
+                        <input type="checkbox" name="remember" value="1"> Remember me
+                    </label>
+                    <a href="{{ route('password.forgot') }}" style="font-size:0.9rem">Forgot password?</a>
+                </div>
                 <button type="submit" class="btn btn-block">Log in</button>
             </form>
 

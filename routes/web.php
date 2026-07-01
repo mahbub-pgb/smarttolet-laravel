@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Web\Admin\ListingController as AdminListingController;
 use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Web\Auth\AuthController;
+use App\Http\Controllers\Web\Auth\PasswordResetController;
 use App\Http\Controllers\Web\BlogController;
 use App\Http\Controllers\Web\DashboardListingController;
 use App\Http\Controllers\Web\EngagementController;
@@ -47,6 +48,16 @@ Route::middleware('guest:web')->group(function () {
     // Login.
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+
+    // Forgot password — recover via SMS OTP (rate-limited so codes can't be spammed).
+    Route::get('/password/forgot', [PasswordResetController::class, 'showForgot'])->name('password.forgot');
+    Route::post('/password/forgot', [PasswordResetController::class, 'sendOtp'])->middleware('throttle:password-reset');
+    Route::get('/password/verify', [PasswordResetController::class, 'showVerify'])->name('password.verify');
+    Route::post('/password/verify', [PasswordResetController::class, 'verifyOtp'])->middleware('throttle:10,1');
+    Route::post('/password/resend', [PasswordResetController::class, 'resendOtp'])
+        ->name('password.resend')->middleware('throttle:6,1');
+    Route::get('/password/reset', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/password/reset', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1');
 
     // Signup — step 1: phone number -> send OTP via SMS.
     Route::get('/register', [AuthController::class, 'showRegisterPhone'])->name('register');
