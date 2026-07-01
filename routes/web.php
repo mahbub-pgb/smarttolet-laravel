@@ -61,6 +61,10 @@ Route::middleware('guest:web')->group(function () {
 Route::middleware('auth:web')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Reveal (and remember) a listing owner's phone number.
+    Route::post('/listings/{listing}/reveal-contact', [ListingController::class, 'revealContact'])
+        ->name('listings.reveal-contact');
+
     // "My Listings" tab + create/edit/delete (owner only).
     Route::get('/dashboard', [DashboardListingController::class, 'index'])->name('dashboard');
 

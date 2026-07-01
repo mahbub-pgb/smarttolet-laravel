@@ -107,7 +107,16 @@
                     <p style="margin:0 0 4px;font-weight:600">Listed by</p>
                     <p style="margin:0 0 16px;color:var(--muted)">{{ $listing->owner->name ?? 'Owner' }}</p>
                     @auth('web')
-                        <a href="tel:{{ $listing->owner->mobile }}" class="btn btn-block">📞 {{ $listing->owner->mobile }}</a>
+                        @if ($contactRevealed)
+                            <a href="tel:{{ $listing->owner->mobile }}" class="btn btn-block">📞 {{ $listing->owner->mobile }}</a>
+                        @else
+                            {{-- Glassy locked number: the real value is fetched (and saved) only on click. --}}
+                            <div class="reveal-contact" id="reveal-contact"
+                                 data-url="{{ route('listings.reveal-contact', $listing) }}">
+                                <a href="#" class="btn btn-block reveal-number" tabindex="-1" aria-hidden="true">📞 01XXX-XXXXXX</a>
+                                <button type="button" class="reveal-overlay">🔒 Click to show number</button>
+                            </div>
+                        @endif
                     @else
                         <a href="{{ route('login') }}" class="btn btn-block">Log in to see contact</a>
                     @endauth

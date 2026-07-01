@@ -6,16 +6,22 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Listing;
+use App\Services\Engagement\ContactRevealService;
 use App\Services\Listing\ListingService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ListingController extends Controller
 {
     /** Upper bound on markers plotted on the map (clustered client-side). */
     private const MAP_MARKER_CAP = 10000;
 
-    public function __construct(private ListingService $listings) {}
+    public function __construct(
+        private ListingService $listings,
+        private ContactRevealService $reveals,
+    ) {}
 
     /** GET /listings — browse / search all approved listings. */
     public function index(Request $request): View
@@ -43,7 +49,9 @@ class ListingController extends Controller
 
         // Non-approved listings are previewable only by the owner or staff
         // (so admins can review a listing before approving or deleting it).
-        $viewer = $request->user();
+        // This is a public route with no auth middleware, so the default guard
+        // (JWT/api) is active — read the session (web) guard explicitly.
+        $viewer = $request->user('web');
         $canPreview = $viewer && ($listing->isOwnedBy($viewer) || $viewer->isStaff());
 
         abort_unless($listing->isPubliclyVisible() || $canPreview, 404);
@@ -60,7 +68,21 @@ class ListingController extends Controller
 
         $isPreview = ! $listing->isPubliclyVisible();
 
-        return view('listings.show', compact('listing', 'related', 'isPreview'));
+        // Whether this logged-in viewer has already unlocked the owner's number
+        // (so we skip the "click to show number" glass on repeat visits).
+        $contactRevealed = $viewer !== null && $this->reveals->hasRevealed($viewer, $listing->id);
+
+        return view('listings.show', compact('listing', 'related', 'isPreview', 'contactRevealed'));
+    }
+
+    /** POST /listings/{listing}/reveal-contact — unlock & persist the owner's number for this user. */
+    public function revealContact(Request $request, Listing $listing): JsonResponse
+    {
+        $listing->loadMissing('owner:id,mobile');
+
+        $mobile = $this->reveals->reveal($request->user(), $listing);
+
+        return response()->json(['mobile' => $mobile]);
     }
 
     /** GET /map — geocoded listings plotted on a map, optionally near the user. */
@@ -116,10 +138,13 @@ class ListingController extends Controller
         }
 
         foreach (['min_rent', 'max_rent', 'bedrooms', 'bathrooms'] as $key) {
+
             if ($request->filled($key)) {
                 $filters[$key] = $request->integer($key);
             }
         }
+
+        \Log::debug('Filters built from request: '.json_encode($filters));
 
         return $filters;
     }
@@ -128,9 +153,9 @@ class ListingController extends Controller
      * Distinct area names across publicly visible listings, for the area
      * search datalist (type-to-filter / scroll-to-pick).
      *
-     * @return \Illuminate\Support\Collection<int, string>
+     * @return Collection<int, string>
      */
-    private function areaOptions(): \Illuminate\Support\Collection
+    private function areaOptions(): Collection
     {
         return Listing::query()
             ->publiclyVisible()

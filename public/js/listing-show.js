@@ -95,6 +95,34 @@
         });
     };
 
+    // ---- Reveal owner's phone number (fetched + persisted on click) ----
+    $(function () {
+        var $wrap = $('#reveal-contact');
+        if (!$wrap.length) return;
+
+        var token = $('meta[name="csrf-token"]').attr('content');
+        var $number = $wrap.find('.reveal-number');
+        var $overlay = $wrap.find('.reveal-overlay');
+
+        $overlay.on('click', function () {
+            $overlay.prop('disabled', true).text('Loading…');
+
+            $.ajax({
+                url: $wrap.data('url'),
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': token }
+            }).done(function (res) {
+                var mobile = (res && res.mobile) ? res.mobile : '';
+                $number.text('📞 ' + mobile).attr('href', 'tel:' + mobile).removeAttr('aria-hidden');
+                $wrap.addClass('is-revealed');
+                $overlay.remove();
+            }).fail(function () {
+                $overlay.prop('disabled', false).text('🔒 Click to show number');
+                alert('Could not load the number. Please try again.');
+            });
+        });
+    });
+
     // ---- Leaflet fallback (no Google Maps key) ----
     $(function () {
         var $map = $('#map');
