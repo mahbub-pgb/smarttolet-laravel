@@ -313,8 +313,9 @@ class ListingService
     }
 
     /**
-     * Resolve the human address + area for a coordinate. Uses the submitted
-     * values when present, otherwise reverse-geocodes the pin (best effort).
+     * Resolve the human address + area for a coordinate. The area is always
+     * chosen manually by the user (never derived from the pin); only a missing
+     * address is reverse-geocoded from the coordinate as a convenience.
      *
      * @param  array<string, mixed>  $data
      * @return array{0: string, 1: string}
@@ -327,13 +328,12 @@ class ListingService
         $lat = $data['latitude'] ?? $existing?->latitude;
         $lng = $data['longitude'] ?? $existing?->longitude;
 
-        if (($address === '' || $area === '') && $lat !== null && $lng !== null) {
+        if ($address === '' && $lat !== null && $lng !== null) {
             $geo = $this->geo->reverseGeocode((float) $lat, (float) $lng);
-            $address = $address ?: (string) ($geo['formatted_address'] ?? 'Location pinned on map');
-            $area = $area ?: (string) ($geo['area_name'] ?? 'Unknown area');
+            $address = (string) ($geo['formatted_address'] ?? 'Location pinned on map');
         }
 
-        return [$address ?: 'Location pinned on map', $area ?: 'Unknown area'];
+        return [$address ?: 'Location pinned on map', $area];
     }
 
     public function delete(Listing $listing): void

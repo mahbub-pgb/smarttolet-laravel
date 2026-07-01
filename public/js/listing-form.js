@@ -348,14 +348,9 @@
     function reverseGeocodeGoogle(geocoder, lat, lng) {
         geocoder.geocode({ location: { lat: +lat, lng: +lng } }, function (results, status) {
             if (status !== 'OK' || !results[0]) return;
+            // Only the address is auto-filled from the pin; the area is chosen
+            // manually via the searchable Area dropdown.
             $('#address').val(results[0].formatted_address || $('#address').val());
-            var comp = results[0].address_components || [];
-            var area = null;
-            $.each(comp, function (_, c) {
-                if (!area && (c.types.indexOf('sublocality') >= 0 || c.types.indexOf('neighborhood') >= 0)) area = c;
-            });
-            if (!area) $.each(comp, function (_, c) { if (!area && c.types.indexOf('locality') >= 0) area = c; });
-            if (area) $('#area_name').val(area.long_name);
         });
     }
 
@@ -433,10 +428,8 @@
         function reverseGeocode(lat, lng) {
             $.getJSON('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng)
                 .done(function (d) {
+                    // Only the address is auto-filled; area is chosen manually.
                     if (d.display_name) $('#address').val(d.display_name);
-                    var a = d.address || {};
-                    var area = a.suburb || a.neighbourhood || a.city_district || a.city || a.town || a.village;
-                    if (area) $('#area_name').val(area);
                 });
         }
         function setPin(lat, lng) { $('#latitude').val((+lat).toFixed(7)); $('#longitude').val((+lng).toFixed(7)); marker.setLatLng([lat, lng]); reverseGeocode(lat, lng); }

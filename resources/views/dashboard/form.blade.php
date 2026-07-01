@@ -103,7 +103,7 @@
                 {{-- ===== Location ===== --}}
                 <fieldset class="form-card">
                     <legend>Location</legend>
-                    <p class="form-hint">Search, use your current location, or click the map to drop a pin. The address and area fill in automatically.</p>
+                    <p class="form-hint">Search, use your current location, or click the map to drop a pin. The address fills in automatically — then choose the area below.</p>
                     @if ($prefillFromProfile)
                         <p class="form-hint" style="color:var(--brand)">📍 Starting from your saved profile location — move the pin if this listing is elsewhere.</p>
                     @endif
@@ -119,8 +119,24 @@
                     <input type="hidden" name="longitude" id="longitude" value="{{ $lng }}">
 
                     <div class="form-grid-2">
+                        @php($currentArea = old('area_name', $listing->area_name))
+                        @php($knownAreas = collect($areaGroups)->flatten())
                         <label>Area
-                            <input type="text" name="area_name" id="area_name" maxlength="120" value="{{ old('area_name', $listing->area_name) }}" placeholder="e.g. Dhanmondi">
+                            <select name="area_name" id="area_name" class="js-area-select" required
+                                    data-tags="true" data-placeholder="Search, scroll or type an area…">
+                                <option value=""></option>
+                                {{-- Preserve a custom/typed area that isn't in the curated list. --}}
+                                @if ($currentArea && ! $knownAreas->contains($currentArea))
+                                    <option value="{{ $currentArea }}" selected>{{ $currentArea }}</option>
+                                @endif
+                                @foreach ($areaGroups as $city => $areas)
+                                    <optgroup label="{{ $city }}">
+                                        @foreach ($areas as $area)
+                                            <option value="{{ $area }}" @selected($area === $currentArea)>{{ $area }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
                         </label>
                         <label>Address
                             <input type="text" name="address" id="address" maxlength="255" value="{{ old('address', $listing->address) }}" placeholder="Auto-filled from the map">
@@ -240,6 +256,7 @@
 @endsection
 
 @push('head')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     @unless ($mapsKey)
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     @endunless
@@ -253,6 +270,8 @@
     @unless ($mapsKey)
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     @endunless
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('js/area-select.js') }}"></script>
     <script src="{{ asset('js/listing-form.js') }}"></script>
     @if ($mapsKey)
         <script async src="https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&libraries=places&callback=initListingMap"></script>

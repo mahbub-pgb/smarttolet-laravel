@@ -38,7 +38,7 @@ abstract class ListingFormRequest extends FormRequest
             'latitude' => ['required_with:longitude', 'nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['required_with:latitude', 'nullable', 'numeric', 'between:-180,180'],
             'address' => ['nullable', 'string', 'max:255'],
-            'area_name' => ['nullable', 'string', 'max:120'],
+            'area_name' => ['required', 'string', 'max:120'],
 
             // Details
             'bedrooms' => ['nullable', 'integer', 'min:0', 'max:50'],

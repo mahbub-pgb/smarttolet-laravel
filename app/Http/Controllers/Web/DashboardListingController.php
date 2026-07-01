@@ -57,6 +57,7 @@ class DashboardListingController extends Controller
             'listing' => new Listing,
             'isEdit' => false,
             'mediaLibrary' => $this->mediaLibrary($request),
+            'areaGroups' => config('bd_areas', []),
         ]);
     }
 
@@ -88,6 +89,7 @@ class DashboardListingController extends Controller
             'listing' => $listing,
             'isEdit' => true,
             'mediaLibrary' => $this->mediaLibrary($request),
+            'areaGroups' => config('bd_areas', []),
         ]);
     }
 
