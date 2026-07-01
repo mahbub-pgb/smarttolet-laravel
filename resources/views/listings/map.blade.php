@@ -77,8 +77,8 @@
                     Beds
                     <select name="bedrooms">
                         <option value="">Any</option>
-                        @foreach ([1, 2, 3, 4] as $b)
-                            <option value="{{ $b }}" @selected(request('bedrooms') == $b)>{{ $b }}+</option>
+                        @foreach ([1, 2, 3, 4, 5] as $b)
+                            <option value="{{ $b }}" @selected(request('bedrooms') == $b)>{{ $b }} {{ \Illuminate\Support\Str::plural('bed', $b) }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -123,6 +123,7 @@
         <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
     @endunless
     <script src="{{ asset('js/listing-map.js') }}"></script>
+    <script src="{{ asset('js/rent-slider.js') }}"></script>
     @if ($mapsKey)
         <script async src="https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&callback=initListingsMap"></script>
     @endif

@@ -41,20 +41,34 @@
                                 @endforeach
                             </select>
                         </div>
+                        @php($rentStep = 500)
+                        @php($minRentVal = (int) request('min_rent', 0))
+                        @php($maxRentVal = request()->filled('max_rent') ? (int) request('max_rent') : $rentCeiling)
                         <div class="field">
-                            <label>Min rent</label>
-                            <input type="number" name="min_rent" value="{{ request('min_rent') }}" placeholder="0">
+                            <label>Rent range</label>
+                            <div class="rent-slider" data-min="0" data-max="{{ $rentCeiling }}" data-step="{{ $rentStep }}">
+                                <span class="rent-slider-label">
+                                    ৳<output id="rent-min-out"></output> – ৳<output id="rent-max-out"></output>
+                                </span>
+                                <div class="rent-slider-track">
+                                    <div class="rent-slider-rail"></div>
+                                    <div class="rent-slider-range" id="rent-range"></div>
+                                    <input type="range" id="rent-min" min="0" max="{{ $rentCeiling }}"
+                                           step="{{ $rentStep }}" value="{{ $minRentVal }}">
+                                    <input type="range" id="rent-max" min="0" max="{{ $rentCeiling }}"
+                                           step="{{ $rentStep }}" value="{{ $maxRentVal }}">
+                                </div>
+                                {{-- Actual submitted values (left blank at the extremes so we don't over-filter). --}}
+                                <input type="hidden" name="min_rent" id="rent-min-input" value="{{ request('min_rent') }}">
+                                <input type="hidden" name="max_rent" id="rent-max-input" value="{{ request('max_rent') }}">
+                            </div>
                         </div>
                         <div class="field">
-                            <label>Max rent</label>
-                            <input type="number" name="max_rent" value="{{ request('max_rent') }}" placeholder="Any">
-                        </div>
-                        <div class="field">
-                            <label>Min bedrooms</label>
+                            <label>Bedrooms</label>
                             <select name="bedrooms">
                                 <option value="">Any</option>
-                                @foreach ([1, 2, 3, 4] as $b)
-                                    <option value="{{ $b }}" @selected(request('bedrooms') == $b)>{{ $b }}+</option>
+                                @foreach ([1, 2, 3, 4, 5] as $b)
+                                    <option value="{{ $b }}" @selected(request('bedrooms') == $b)>{{ $b }} {{ \Illuminate\Support\Str::plural('bed', $b) }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -99,4 +113,5 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{ asset('js/area-select.js') }}"></script>
+    <script src="{{ asset('js/rent-slider.js') }}"></script>
 @endpush

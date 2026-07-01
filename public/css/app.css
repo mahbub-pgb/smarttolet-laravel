@@ -705,6 +705,8 @@ img {
 
 /* --- Dual-thumb rent range slider --- */
 .rent-slider {
+    display: flex;
+    flex-direction: column;
     min-width: 190px;
     gap: 8px;
 }

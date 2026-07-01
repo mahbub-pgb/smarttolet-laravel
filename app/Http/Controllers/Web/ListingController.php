@@ -28,8 +28,9 @@ class ListingController extends Controller
 
         $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
         $areas = $this->areaOptions();
+        $rentCeiling = $this->rentCeiling();
 
-        return view('listings.index', compact('listings', 'types', 'areas'));
+        return view('listings.index', compact('listings', 'types', 'areas', 'rentCeiling'));
     }
 
     /** GET /listings/{slug} — single listing detail. */
@@ -77,8 +78,7 @@ class ListingController extends Controller
         $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
 
         // Upper bound for the rent range slider, rounded up to a clean step.
-        $rentCeiling = (int) Listing::query()->publiclyVisible()->max('rent');
-        $rentCeiling = max((int) (ceil($rentCeiling / 1000) * 1000), 1000);
+        $rentCeiling = $this->rentCeiling();
 
         $points = $listings->map(fn (Listing $l) => [
             'id' => $l->id,
@@ -140,5 +140,16 @@ class ListingController extends Controller
             ->distinct()
             ->orderBy('area_name')
             ->pluck('area_name');
+    }
+
+    /**
+     * Upper bound for the rent range slider, rounded up to a clean step
+     * (minimum 1000 so the slider always has a usable range).
+     */
+    private function rentCeiling(): int
+    {
+        $max = (int) Listing::query()->publiclyVisible()->max('rent');
+
+        return max((int) (ceil($max / 1000) * 1000), 1000);
     }
 }

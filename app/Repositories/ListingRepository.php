@@ -118,7 +118,7 @@ class ListingRepository extends BaseRepository implements ListingRepositoryInter
             $query->where('rent', '<=', (int) $filters['max_rent']);
         }
         if (isset($filters['bedrooms'])) {
-            $query->where('bedrooms', '>=', (int) $filters['bedrooms']);
+            $query->where('bedrooms', '=', (int) $filters['bedrooms']);
         }
         if (isset($filters['bathrooms'])) {
             $query->where('bathrooms', '>=', (int) $filters['bathrooms']);
