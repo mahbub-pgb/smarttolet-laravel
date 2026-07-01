@@ -277,6 +277,33 @@ img {
     flex: 0 0 auto;
 }
 
+/* Select2 area picker: make it flex + look like the other searchbar controls. */
+.searchbar .select2-container {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+.searchbar .select2-container--default .select2-selection--single {
+    height: auto;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+}
+.searchbar .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0 14px;
+    line-height: 1.6;
+    color: var(--ink);
+}
+.searchbar .select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: var(--muted);
+}
+.searchbar .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+    right: 8px;
+}
+
 /* --- Sections --- */
 .section {
     padding: 56px 0;

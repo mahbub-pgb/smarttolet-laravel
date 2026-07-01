@@ -9,8 +9,23 @@
         <p>Browse thousands of rooms, apartments, and offices for rent. Search by area, explore on the map, and connect directly with verified owners.</p>
         <form method="GET" action="{{ route('listings.index') }}" class="searchbar">
             <input type="text" name="q" placeholder="Search by title or keyword…">
-            <input type="text" name="area" list="area-options" placeholder="Area / location" autocomplete="off">
-            @include('partials.area-datalist')
+            @php($currentArea = request('area'))
+            @php($areaGroups = config('bd_areas', []))
+            @php($knownAreas = collect($areaGroups)->flatten())
+            <select name="area" class="js-area-select" data-placeholder="Area / location">
+                <option value=""></option>
+                {{-- Preserve a typed/custom area that isn't in the curated list. --}}
+                @if ($currentArea && ! $knownAreas->contains($currentArea))
+                    <option value="{{ $currentArea }}" selected>{{ $currentArea }}</option>
+                @endif
+                @foreach ($areaGroups as $city => $cityAreas)
+                    <optgroup label="{{ $city }}">
+                        @foreach ($cityAreas as $area)
+                            <option value="{{ $area }}" @selected($area === $currentArea)>{{ $area }}</option>
+                        @endforeach
+                    </optgroup>
+                @endforeach
+            </select>
             <select name="type">
                 <option value="">Any type</option>
                 <option value="apartment">Apartment</option>
@@ -87,3 +102,12 @@
 </section>
 @endif
 @endsection
+
+@push('head')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('js/area-select.js') }}"></script>
+@endpush
