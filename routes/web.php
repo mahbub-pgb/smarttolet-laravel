@@ -9,7 +9,9 @@ use App\Http\Controllers\Web\Admin\SettingsController as AdminSettingsController
 use App\Http\Controllers\Web\Auth\AuthController;
 use App\Http\Controllers\Web\BlogController;
 use App\Http\Controllers\Web\DashboardListingController;
+use App\Http\Controllers\Web\EngagementController;
 use App\Http\Controllers\Web\MediaController;
+use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\ListingController;
 use App\Http\Controllers\Web\PageController;
@@ -69,6 +71,15 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/listings/{listing}/reveal-contact', [ListingController::class, 'revealContact'])
         ->name('listings.reveal-contact');
 
+    // Favourite / un-favourite a listing (AJAX from the ❤️ on cards).
+    Route::post('/listings/{listing}/favorite', [EngagementController::class, 'toggleFavorite'])
+        ->name('favorites.toggle');
+
+    // Notifications feed (saved-search matches, listing approvals, etc.).
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+
     // "My Listings" tab + create/edit/delete (owner only).
     Route::get('/dashboard', [DashboardListingController::class, 'index'])->name('dashboard');
 
@@ -81,6 +92,14 @@ Route::middleware('auth:web')->group(function () {
 
         // "Analytics" tab — views + phone reveals across the user's listings.
         Route::get('/analytics', [DashboardListingController::class, 'analytics'])->name('analytics');
+
+        // "Saved" tab — favourited listings.
+        Route::get('/saved', [EngagementController::class, 'saved'])->name('saved');
+
+        // "Searches" tab — build + manage saved searches (with alerts).
+        Route::get('/searches', [EngagementController::class, 'searches'])->name('searches');
+        Route::post('/saved-searches', [EngagementController::class, 'storeSearch'])->name('searches.store');
+        Route::delete('/saved-searches/{search}', [EngagementController::class, 'destroySearch'])->name('searches.destroy');
 
         // "Profile Settings" tab.
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');

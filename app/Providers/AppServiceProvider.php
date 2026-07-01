@@ -34,6 +34,32 @@ class AppServiceProvider extends ServiceProvider
         $this->shareMapZoom();
         $this->shareAdminPendingCount();
         $this->shareNavigationPages();
+        $this->shareEngagementState();
+    }
+
+    /**
+     * Share the signed-in user's favourite listing ids (for the ❤️ toggle state
+     * on cards) and their unread-notification count (header bell) with the
+     * public layout and the views that render listing cards.
+     */
+    private function shareEngagementState(): void
+    {
+        View::composer(
+            ['home', 'listings.index', 'listings.show', 'dashboard.index', 'dashboard.saved'],
+            function ($view) {
+                $user = auth('web')->user();
+                $view->with('favoriteIds', $user
+                    ? app(\App\Services\Engagement\FavoriteService::class)->ids($user)
+                    : []);
+            },
+        );
+
+        View::composer('layouts.app', function ($view) {
+            $user = auth('web')->user();
+            $view->with('webUnreadCount', $user
+                ? app(\App\Services\Notification\NotificationService::class)->unreadCount($user)
+                : 0);
+        });
     }
 
     /**
@@ -70,7 +96,7 @@ class AppServiceProvider extends ServiceProvider
     private function shareMapZoom(): void
     {
         View::composer(
-            ['dashboard.form', 'dashboard.profile', 'listings.show', 'listings.map'],
+            ['dashboard.form', 'listings.show', 'listings.map'],
             function ($view) {
                 $settings = app(SettingsService::class);
                 $view->with('mapDefaultZoom', (int) $settings->get('map_default_zoom', 12));

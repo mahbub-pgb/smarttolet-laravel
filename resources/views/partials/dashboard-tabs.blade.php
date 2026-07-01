@@ -8,6 +8,14 @@
        class="dash-tab {{ request()->routeIs('dashboard.analytics') ? 'active' : '' }}">
         📊 Analytics
     </a>
+    <a href="{{ route('dashboard.saved') }}"
+       class="dash-tab {{ request()->routeIs('dashboard.saved') ? 'active' : '' }}">
+        ❤️ Saved
+    </a>
+    <a href="{{ route('dashboard.searches') }}"
+       class="dash-tab {{ request()->routeIs('dashboard.searches') ? 'active' : '' }}">
+        🔎 Searches
+    </a>
     <a href="{{ route('dashboard.profile') }}"
        class="dash-tab {{ request()->routeIs('dashboard.profile') ? 'active' : '' }}">
         ⚙️ Profile Settings

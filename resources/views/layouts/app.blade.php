@@ -39,6 +39,12 @@
                 </a>
                 @endif
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('notifications.index') }}"
+                    class="nav-bell {{ request()->routeIs('notifications.*') ? 'active' : '' }}"
+                    aria-label="Notifications" title="Notifications">
+                    🔔
+                    @if (($webUnreadCount ?? 0) > 0)<span class="nav-bell-badge">{{ $webUnreadCount > 9 ? '9+' : $webUnreadCount }}</span>@endif
+                </a>
                 <form method="POST" action="{{ route('logout') }}" style="display:inline">
                     @csrf
                     <button type="submit" class="btn btn-ghost btn-sm">Log out</button>
@@ -92,8 +98,11 @@
             <div class="footer-bottom">© {{ date('Y') }} SmartToLet. All rights reserved.</div>
         </div>
     </footer>
+    @include('partials.confirm-modal')
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     <script src="{{ asset('js/nav.js') }}"></script>
+    <script src="{{ asset('js/favorites.js') }}"></script>
+    <script src="{{ asset('js/confirm-dialog.js') }}"></script>
     @stack('scripts')
 </body>
 

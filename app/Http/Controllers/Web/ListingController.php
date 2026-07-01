@@ -29,16 +29,62 @@ class ListingController extends Controller
     public function index(Request $request): View
     {
         $page = max(1, $request->integer('page', 1));
+        $filters = $this->filters($request);
 
-        $listings = $this->listings
-            ->search($this->filters($request), 12, $page)
-            ->withQueryString();
+        $listings = $this->listings->search($filters, 12, $page)->withQueryString();
 
         $types = Listing::query()->publiclyVisible()->distinct()->orderBy('type')->pluck('type');
         $areas = $this->areaOptions();
         $rentCeiling = $this->rentCeiling();
 
-        return view('listings.index', compact('listings', 'types', 'areas', 'rentCeiling'));
+        // When nothing matches, suggest relaxing individual filters (each with a
+        // count) so a dead end becomes a next step instead of a wall.
+        $suggestions = $listings->isEmpty()
+            ? $this->emptyStateSuggestions($request, $filters)
+            : [];
+
+        return view('listings.index', compact('listings', 'types', 'areas', 'rentCeiling', 'suggestions'));
+    }
+
+    /**
+     * For an empty result set, count how many listings would show if each active
+     * filter were dropped — the ones that unlock results become "Try …" links.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<int, array{label: string, count: int, url: string}>
+     */
+    private function emptyStateSuggestions(Request $request, array $filters): array
+    {
+        $droppable = [
+            'area' => 'any area',
+            'max_rent' => 'a higher max price',
+            'min_rent' => 'a lower minimum',
+            'bedrooms' => 'any number of bedrooms',
+            'type' => 'any property type',
+            'occupancy' => 'any occupancy rule',
+        ];
+
+        $suggestions = [];
+
+        foreach ($droppable as $key => $label) {
+            if (! array_key_exists($key, $filters)) {
+                continue;
+            }
+
+            $relaxed = $filters;
+            unset($relaxed[$key]);
+
+            $count = $this->listings->search($relaxed, 1, 1)->total();
+            if ($count > 0) {
+                $suggestions[] = [
+                    'label' => $label,
+                    'count' => $count,
+                    'url' => $request->fullUrlWithQuery([$key => null]),
+                ];
+            }
+        }
+
+        return array_slice($suggestions, 0, 3);
     }
 
     /** GET /listings/{slug} — single listing detail. */
@@ -145,13 +191,10 @@ class ListingController extends Controller
         }
 
         foreach (['min_rent', 'max_rent', 'bedrooms', 'bathrooms'] as $key) {
-
             if ($request->filled($key)) {
                 $filters[$key] = $request->integer($key);
             }
         }
-
-        \Log::debug('Filters built from request: '.json_encode($filters));
 
         return $filters;
     }

@@ -9,11 +9,27 @@ use App\Models\Listing;
 use App\Models\Media;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminListingManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Creating a listing now requires at least one photo; keep it off disk.
+        Storage::fake('public');
+    }
+
+    /** A fake image accepted by the store form's "at least one photo" rule. */
+    private function fakePhoto(): UploadedFile
+    {
+        return UploadedFile::fake()->create('photo.jpg', 500, 'image/jpeg');
+    }
 
     private function admin(): User
     {
@@ -181,6 +197,7 @@ class AdminListingManagementTest extends TestCase
             'area_name' => 'Gulshan',
             'address' => '1, Gulshan',
             'as_draft' => 0,
+            'images' => [$this->fakePhoto()],
         ])->assertRedirect(route('dashboard'));
 
         $listing = Listing::where('owner_id', $admin->id)->firstOrFail();
@@ -203,6 +220,7 @@ class AdminListingManagementTest extends TestCase
             'area_name' => 'Mirpur',
             'address' => '1, Mirpur',
             'as_draft' => 0,
+            'images' => [$this->fakePhoto()],
         ]);
 
         $this->assertSame(Listing::STATUS_PENDING, Listing::where('owner_id', $user->id)->value('status'));

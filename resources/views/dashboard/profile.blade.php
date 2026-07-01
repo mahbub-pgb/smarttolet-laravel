@@ -2,12 +2,6 @@
 
 @section('title', 'Profile Settings')
 
-@php
-    $mapsKey = config('geo.google.browser_key');
-    $lat = old('latitude', $user->latitude);
-    $lng = old('longitude', $user->longitude);
-@endphp
-
 @section('content')
     <section class="section">
         <div class="container container-narrow">
@@ -75,28 +69,6 @@
                     </div>
                 </fieldset>
 
-                {{-- ===== Your location ===== --}}
-                <fieldset class="form-card">
-                    <legend>Your location</legend>
-                    <p class="form-hint">Set your location once and new listings will start from here. Use your current location, search, or click the map to drop a pin.</p>
-
-                    <div class="map-toolbar">
-                        <input type="text" id="map-search" placeholder="🔍 Search for a place or address…" autocomplete="off">
-                        <button type="button" class="btn btn-ghost btn-sm" id="use-location">📍 Use current location</button>
-                    </div>
-
-                    <div id="pick-map" class="pick-map" data-maps="{{ $mapsKey ? 'google' : 'leaflet' }}" data-lat="{{ $lat }}" data-lng="{{ $lng }}" data-zoom="{{ $mapDefaultZoom }}" data-zoom-pinned="{{ $mapPinnedZoom }}" data-default-lat="{{ $mapDefaultLat }}" data-default-lng="{{ $mapDefaultLng }}"></div>
-
-                    <input type="hidden" name="latitude" id="latitude" value="{{ $lat }}">
-                    <input type="hidden" name="longitude" id="longitude" value="{{ $lng }}">
-
-                    <div class="form-row">
-                        <label>Address
-                            <input type="text" name="address" id="address" value="{{ old('address', $user->address) }}" placeholder="Auto-filled from the map">
-                        </label>
-                    </div>
-                </fieldset>
-
                 <fieldset class="form-card">
                     <legend>Change password</legend>
                     <p class="form-hint">Leave blank to keep your current password.</p>
@@ -113,19 +85,3 @@
         </div>
     </section>
 @endsection
-
-@push('head')
-    @unless ($mapsKey)
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    @endunless
-@endpush
-
-@push('scripts')
-    @unless ($mapsKey)
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    @endunless
-    <script src="{{ asset('js/listing-form.js') }}"></script>
-    @if ($mapsKey)
-        <script async src="https://maps.googleapis.com/maps/api/js?key={{ $mapsKey }}&libraries=places&callback=initListingMap"></script>
-    @endif
-@endpush

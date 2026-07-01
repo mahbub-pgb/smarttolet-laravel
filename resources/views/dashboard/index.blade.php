@@ -51,7 +51,9 @@
                                     @endif
                                     <a href="{{ route('dashboard.listings.edit', $listing) }}" class="btn btn-ghost btn-sm">Edit</a>
                                     <form method="POST" action="{{ route('dashboard.listings.destroy', $listing) }}"
-                                          onsubmit="return confirm('Delete this listing? This cannot be undone.')" style="display:inline">
+                                          data-confirm="Delete “{{ \Illuminate\Support\Str::limit($listing->title, 40) }}”? This cannot be undone."
+                                          data-confirm-title="Delete listing?" data-confirm-action="Delete listing"
+                                          style="display:inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-ghost btn-sm btn-danger">Delete</button>

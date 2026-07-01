@@ -1852,6 +1852,25 @@ code {
     justify-content: flex-end;
 }
 
+/* Confirmation popup (destructive-action guard). */
+.confirm-box {
+    max-width: 420px;
+}
+.confirm-box .modal-body {
+    color: var(--ink);
+    line-height: 1.6;
+}
+.btn.confirm-accept {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+.btn.confirm-accept:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    color: #fff;
+}
+
 .dropzone {
     display: flex;
     flex-direction: column;
@@ -2713,4 +2732,281 @@ code {
         max-width: 100%;
         margin: 1.2em auto;
     }
+}
+
+/* ===================================================================== */
+/* Engagement: favourites ❤️, saved searches, alerts, quick filters      */
+/* ===================================================================== */
+
+/* Heart button on listing cards (sits over the image, top-right). */
+.fav-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: #94a3b8;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition:
+        transform 0.12s ease,
+        color 0.12s ease;
+}
+.fav-btn:hover {
+    transform: scale(1.1);
+    color: #ef4444;
+}
+.fav-btn.is-fav {
+    color: #ef4444;
+}
+
+/* Wide labelled variant — the "Save to favourites" button on a listing page.
+   Overrides the circular card-heart styles above. */
+.fav-btn.fav-wide {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+    gap: 8px;
+    padding: 10px 18px;
+    border: 1px solid var(--line);
+}
+.fav-btn.fav-wide:hover {
+    transform: none;
+    background: var(--bg);
+    color: var(--ink);
+    border-color: var(--brand);
+}
+.fav-btn.fav-wide.is-fav {
+    color: #ef4444;
+    border-color: color-mix(in srgb, #ef4444 40%, var(--line));
+}
+
+/* Header notification bell + unread badge. */
+.nav-bell {
+    position: relative;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    line-height: 1;
+}
+.nav-bell:hover {
+    background: var(--bg);
+}
+.nav-bell-badge {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 999px;
+}
+
+/* Quick preset filter chips + save-search row. */
+.quick-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 4px 0 18px;
+}
+.quick-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.quick-chip {
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    cursor: pointer;
+}
+.quick-chip:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+.quick-chip.active {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+}
+.save-search-form {
+    margin: 0;
+}
+
+/* Custom-search builder on the dashboard "Saved" tab. */
+.search-builder {
+    margin-bottom: 8px;
+}
+.search-builder-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+}
+.search-builder .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+}
+.search-builder .field input,
+.search-builder .field select {
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-size: 0.92rem;
+    color: var(--ink);
+    background: var(--card);
+    width: 100%;
+}
+/* Keep all four controls on one line; the slider takes its share of the row. */
+.search-builder .rent-slider {
+    min-width: 0;
+}
+/* On the white panel the default rail is nearly invisible — darken it. */
+.search-builder .rent-slider-rail {
+    background: #cbd5e1;
+    height: 5px;
+}
+.search-builder .rent-slider-range {
+    height: 5px;
+}
+.search-builder-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+.search-builder .select2-container {
+    width: 100% !important;
+}
+.search-builder .select2-container--default .select2-selection--single {
+    height: auto;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--card);
+}
+.search-builder .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0 11px;
+    line-height: 1.5;
+    color: var(--ink);
+}
+.search-builder .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+}
+
+/* Empty-state relax-a-filter suggestions. */
+.suggestion-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 6px;
+}
+
+/* Saved-searches list on the dashboard "Saved" tab. */
+.saved-search-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.saved-search {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+.saved-search-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.saved-search-info .muted {
+    font-size: 0.82rem;
+}
+.saved-search-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.saved-search-actions form {
+    margin: 0;
+}
+
+/* Notifications feed. */
+.notif {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    margin-bottom: 10px;
+    color: var(--ink);
+}
+.notif:hover {
+    border-color: var(--brand);
+}
+.notif-unread {
+    background: color-mix(in srgb, var(--brand) 5%, var(--card));
+    border-color: color-mix(in srgb, var(--brand) 25%, var(--line));
+}
+.notif-icon {
+    font-size: 1.2rem;
+    line-height: 1.4;
+}
+.notif-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+.notif-time {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.notif-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--brand);
+    flex-shrink: 0;
+    margin-top: 6px;
 }

@@ -11,6 +11,7 @@ use App\Models\Listing;
 use App\Models\ListingVisit;
 use App\Models\Media;
 use App\Models\Report;
+use App\Models\SavedSearch;
 use App\Models\User;
 use App\Repositories\Contracts\ListingRepositoryInterface;
 use App\Services\Geo\GeoService;
@@ -130,7 +131,48 @@ class ListingService
         $this->syncGeoPoint($listing);
         $this->backfillOwnerLocation($user, $data['latitude'] ?? null, $data['longitude'] ?? null);
 
+        // Admin self-published listings go live immediately — alert matching
+        // saved searches now (owner-approval flows alert from moderate()).
+        if ($autoPublish) {
+            $this->alertSavedSearches($listing);
+        }
+
         return $listing;
+    }
+
+    /**
+     * Notify users whose saved searches (with alerts on) match a freshly
+     * published listing. Matching reuses the exact same search filters, scoped
+     * to this one listing, so alert semantics never drift from the live search.
+     */
+    private function alertSavedSearches(Listing $listing): void
+    {
+        if ($listing->status !== Listing::STATUS_APPROVED) {
+            return;
+        }
+
+        SavedSearch::query()
+            ->where('notify', true)
+            ->where('user_id', '!=', $listing->owner_id) // don't alert the poster
+            ->chunkById(200, function ($searches) use ($listing) {
+                foreach ($searches as $search) {
+                    $params = (array) ($search->params ?? []);
+                    $params['_scope'] = 'public';
+                    $params['only_id'] = $listing->id;
+
+                    if ($this->listings->search($params, 1, 1)->total() === 0) {
+                        continue;
+                    }
+
+                    $this->notifications->notify($search->user_id, 'listing_match', [
+                        'listing_id' => $listing->id,
+                        'title' => $listing->title,
+                        'slug' => $listing->slug,
+                        'search_id' => $search->id,
+                        'search_name' => $search->name,
+                    ]);
+                }
+            });
     }
 
     /**
@@ -429,6 +471,9 @@ class ListingService
                 'listing_id' => $listing->id,
                 'title' => $listing->title,
             ]);
+
+            // Now publicly visible — alert users whose saved searches match.
+            $this->alertSavedSearches($listing);
         } elseif ($action === 'reject') {
             $listing->forceFill([
                 'status' => Listing::STATUS_REJECTED,

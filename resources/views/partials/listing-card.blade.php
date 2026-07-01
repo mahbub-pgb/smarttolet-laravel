@@ -3,6 +3,14 @@
     <div class="card-media">
         @if ($img)<img src="{{ $img }}" alt="{{ $listing->title }}" loading="lazy">@endif
         <span class="badge">{{ $listing->type }}</span>
+        @auth('web')
+            <button type="button"
+                class="fav-btn {{ in_array($listing->id, $favoriteIds ?? []) ? 'is-fav' : '' }}"
+                data-url="{{ route('favorites.toggle', $listing) }}"
+                aria-label="Save to favourites" aria-pressed="{{ in_array($listing->id, $favoriteIds ?? []) ? 'true' : 'false' }}">♥</button>
+        @else
+            <a href="{{ route('login') }}" class="fav-btn" aria-label="Log in to save" title="Log in to save">♥</a>
+        @endauth
     </div>
     <div class="card-body">
         <div class="card-price">৳{{ number_format($listing->rent) }} <small>/ month</small></div>

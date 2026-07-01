@@ -126,6 +126,11 @@ class ListingRepository extends BaseRepository implements ListingRepositoryInter
         if (! empty($filters['owner_id'])) {
             $query->where('owner_id', (int) $filters['owner_id']);
         }
+        // Constrain to a single listing — used to test whether one listing
+        // matches a saved search's stored filters (new-match alerts).
+        if (! empty($filters['only_id'])) {
+            $query->where('id', (int) $filters['only_id']);
+        }
     }
 
     /**

@@ -101,7 +101,17 @@
                     @if ($listings->isEmpty())
                         <div class="empty">
                             <p>No listings match your search.</p>
-                            <a href="{{ route('listings.index') }}" class="btn btn-ghost btn-sm">Clear filters</a>
+                            @if (! empty($suggestions))
+                                <p class="muted" style="margin:10px 0 4px">Try widening a filter:</p>
+                                <div class="suggestion-list">
+                                    @foreach ($suggestions as $s)
+                                        <a href="{{ $s['url'] }}" class="btn btn-ghost btn-sm">
+                                            {{ ucfirst($s['label']) }} <span class="muted">({{ $s['count'] }})</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                            <a href="{{ route('listings.index') }}" class="btn btn-sm" style="margin-top:12px">Clear all filters</a>
                         </div>
                     @else
                         <div class="grid">

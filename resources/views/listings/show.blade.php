@@ -120,6 +120,20 @@
                     @else
                         <a href="{{ route('login') }}" class="btn btn-block">Log in to see contact</a>
                     @endauth
+
+                    @auth('web')
+                        @php($isFav = in_array($listing->id, $favoriteIds ?? []))
+                        <button type="button"
+                            class="btn btn-ghost btn-block fav-btn fav-wide {{ $isFav ? 'is-fav' : '' }}"
+                            style="margin-top:10px"
+                            data-url="{{ route('favorites.toggle', $listing) }}"
+                            data-label-on="❤️ Saved"
+                            data-label-off="🤍 Save to favourites"
+                            aria-pressed="{{ $isFav ? 'true' : 'false' }}">{{ $isFav ? '❤️ Saved' : '🤍 Save to favourites' }}</button>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-ghost btn-block" style="margin-top:10px">🤍 Log in to save</a>
+                    @endauth
+
                     @if ($listing->hasLocation())
                         <a href="https://www.google.com/maps/dir/?api=1&destination={{ $listing->latitude }},{{ $listing->longitude }}"
                            target="_blank" rel="noopener" class="btn btn-ghost btn-block" style="margin-top:10px">🧭 Directions in Google Maps</a>
